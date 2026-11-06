@@ -1,34 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap');
+
 :root {
-  --bg-space: #070913;
-  --bg-card: rgba(16, 20, 38, 0.75);
-  --border-card: rgba(80, 110, 180, 0.25);
-  --accent-cyan: #00f0ff;
-  --accent-purple: #9d4edd;
-  --accent-amber: #ffaa00;
-  --text-main: #f0f4fc;
-  --text-muted: #8e9bb5;
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  --bg: #252a32;
+  --bg-2: #303742;
+  --panel: linear-gradient(155deg, rgba(68, 76, 88, 0.84) 0%, rgba(45, 51, 60, 0.90) 52%, rgba(33, 38, 46, 0.94) 100%);
+  --panel-solid: #2b313a;
+  --panel-border: rgba(226, 234, 244, 0.24);
+  --panel-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 0 rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.36);
+  --text: #f0f4f8;
+  --muted: #a8b3c2;
+  --cyan: #f4f9ff;
+  --green: #00ffa3;
+  --amber: #ffd043;
+  --red: #ff4d5e;
+  --purple: #9aa8bc;
+  --font-hud: 'Orbitron', 'Inter', sans-serif;
+  --font-body: 'Inter', 'Noto Sans TC', system-ui, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root { min-height: 100%; }
 
 body {
-  background-color: var(--bg-space);
-  color: var(--text-main);
-  font-family: var(--font-family);
-  min-height: 100vh;
-  overflow-x: hidden;
-  background-image: 
-    radial-gradient(circle at 15% 20%, rgba(30, 60, 140, 0.25) 0%, transparent 40%),
-    radial-gradient(circle at 85% 80%, rgba(120, 40, 180, 0.2) 0%, transparent 45%);
+  font-family: var(--font-body);
+  color: var(--text);
+  background:
+    /* Brushed anodized micro-grain */
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.014) 0px,
+      rgba(255, 255, 255, 0.014) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    /* Top-left titanium specular sheen */
+    radial-gradient(1100px 580px at 15% -8%, rgba(225, 234, 245, 0.22), transparent 62%),
+    /* Top-right brushed steel reflection */
+    radial-gradient(950px 520px at 88% 4%, rgba(180, 194, 212, 0.15), transparent 58%),
+    /* Bottom ambient metallic bounce */
+    radial-gradient(1000px 500px at 50% 108%, rgba(145, 160, 180, 0.12), transparent 65%),
+    /* Core gunmetal-titanium alloy gradient */
+    linear-gradient(145deg, #3a414d 0%, #2b313b 42%, #20252d 100%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
 }
 
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+button { font-family: inherit; cursor: pointer; }
+code { font-family: ui-monospace, Consolas, monospace; color: var(--cyan); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(235,245,255, 0.25); border-radius: 8px; }

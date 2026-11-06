@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Triage Loader / 進入測驗頁等待動畫（2 秒）
+   ========================================================================== */
+.triage-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1900000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: radial-gradient(ellipse at 50% 44%, #2a3242 0%, #0e1118 72%);
+  animation: tlIn 0.3s ease-out both;
+  overflow: hidden;
+}
+.triage-loader.is-leaving { animation: tlOut 0.45s ease-in forwards; }
+
+.tl-core { position: relative; width: 210px; height: 210px; display: grid; place-items: center; }
+.tl-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #fff;
+  border-right-color: rgba(110, 160, 235, 0.55);
+  will-change: transform;
+  animation: splashSpin 1.1s linear infinite;
+}
+.tl-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(190, 210, 240, 0.2);
+  will-change: transform;
+}
+.tl-ring-a { inset: 6px; border-top: 2px solid rgba(226, 58, 72, 0.95); animation: splashSpin 1.6s linear infinite; }
+.tl-ring-b { inset: 20px; border-bottom: 2px solid rgba(110, 160, 235, 0.95); animation: splashSpin 2.2s linear infinite reverse; }
+.triage-loader .splash-shock { inset: 30px; animation: splashShock 1.1s cubic-bezier(0.1, 0.7, 0.2, 1) infinite; }
+.triage-loader .splash-shock.s1 { animation-delay: 0.1s; }
+.triage-loader .splash-shock.s2 { animation-delay: 0.65s; }
+
+.tl-medal {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 35% 25%, #ffffff 0%, #e8eff9 55%, #c9d6e8 100%);
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.06), 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 46px rgba(120, 170, 240, 0.42);
+  animation: tlPop 0.5s cubic-bezier(0.2, 1.3, 0.3, 1) both;
+  will-change: transform;
+}
+.tl-medal .splash-glint { animation: splashGlint 0.9s 0.9s ease-in-out forwards; }
+
+/* 標誌描繪加速版 */
+.triage-loader .be-anim-cross { animation: beDraw 0.8s 0.1s cubic-bezier(0.5, 0, 0.2, 1) forwards, beFill 0.35s 0.8s ease-out forwards; }
+.triage-loader .be-anim-ring { animation: beRing 0.7s 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+
+.tl-title {
+  margin-top: 8px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 8px;
+  padding-left: 8px;
+  color: #f4f9ff;
+  text-shadow: 0 0 16px rgba(130, 180, 255, 0.8);
+}
+.tl-dots { display: flex; gap: 8px; }
+.tl-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(150, 195, 255, 0.95);
+  animation: tlDot 0.9s ease-in-out infinite;
+}
+.tl-dots i:nth-child(2) { animation-delay: 0.15s; background: #ff6b78; box-shadow: 0 0 10px rgba(255, 90, 105, 0.95); }
+.tl-dots i:nth-child(3) { animation-delay: 0.3s; }
+.tl-bar { width: 260px; height: 3px; border-radius: 99px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.tl-bar i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #e23a48, #fff, #5b8fd6);
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+  animation: splashBar 1.7s 0.05s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes tlIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tlOut { from { opacity: 1; } to { opacity: 0; transform: scale(1.05); } }
+@keyframes tlPop { from { opacity: 0; transform: scale(0.4) rotate(-120deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes tlDot { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-6px); } }
+
