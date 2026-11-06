@@ -11,6 +11,7 @@ import ActionHub from './components/ActionHub'
 import { CriteriaModal, CriteriaProvider } from './components/CriteriaModal'
 import SplashScreen from './components/SplashScreen'
 import TriageLoader from './components/TriageLoader'
+import MobileDeviceGuard from './components/MobileDeviceGuard'
 import {
   formatShortDate,
   getHistoricalDayData,
@@ -116,6 +117,7 @@ export default function App() {
 
   return (
     <CriteriaProvider canViewAnalytics={allDone}>
+      <MobileDeviceGuard />
       {showSplash && <SplashScreen onEnter={() => setPageReveal(true)} onDone={() => setShowSplash(false)} />}
       {loaderState !== 'off' && <TriageLoader leaving={loaderState === 'leaving'} label={loaderLabel} />}
       <div className="aura" style={showSplash && !pageReveal ? { visibility: 'hidden' } : undefined}>

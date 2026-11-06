@@ -6168,6 +6168,308 @@
   font-weight: 500;
 }
 
+/* ==========================================================================
+   Mobile / Small Screen Device Guard (請用電腦開啟此系統)
+   ========================================================================== */
+.mobile-guard-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #03060c;
+  padding: 24px 16px;
+  overflow-y: auto;
+  font-family: var(--font-sans);
+  color: #f4f9ff;
+  animation: mgFadeIn 0.3s ease-out;
+}
+
+@keyframes mgFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.mg-bg-effects {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.mg-grid-lines {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(0, 255, 163, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 163, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.mg-radial-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(0, 255, 163, 0.12) 0%, rgba(0, 180, 255, 0.04) 50%, transparent 75%);
+}
+
+.mg-card {
+  position: relative;
+  z-index: 10;
+  max-width: 500px;
+  width: 100%;
+  background: rgba(10, 16, 26, 0.94);
+  border: 1.5px solid rgba(0, 255, 163, 0.45);
+  border-radius: 18px;
+  padding: 24px 22px;
+  box-shadow: 0 0 50px rgba(0, 255, 163, 0.15), 0 12px 40px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.mg-top-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+
+.mg-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-hud);
+}
+
+.mg-brand-mark {
+  font-size: 16px;
+  font-weight: 800;
+  color: #00ffa3;
+  letter-spacing: 1.5px;
+}
+
+.mg-brand-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.mg-lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #00ffa3;
+  font-family: var(--font-hud);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mg-lang-btn:hover {
+  background: rgba(0, 255, 163, 0.15);
+  border-color: rgba(0, 255, 163, 0.45);
+}
+
+/* Icon Stage */
+.mg-icon-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 6px 0;
+}
+
+.mg-device-circle {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+}
+
+.mg-device-circle.phone {
+  color: #ff7887;
+  border-color: rgba(255, 77, 94, 0.4);
+  background: rgba(255, 77, 94, 0.08);
+}
+
+.mg-x-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ff4d5e;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 10px rgba(255, 77, 94, 0.7);
+}
+
+.mg-arrow-beam {
+  position: relative;
+  width: 48px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.beam-pulse {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, #00ffa3, transparent);
+  animation: beamMove 1.5s infinite linear;
+}
+
+@keyframes beamMove {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.mg-device-circle.desktop.active {
+  width: 82px;
+  height: 82px;
+  color: #00ffa3;
+  border-color: #00ffa3;
+  background: rgba(0, 255, 163, 0.12);
+  box-shadow: 0 0 24px rgba(0, 255, 163, 0.35);
+  animation: pulseDevice 2.2s infinite ease-in-out;
+}
+
+@keyframes pulseDevice {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(0, 255, 163, 0.3); }
+  50% { transform: scale(1.06); box-shadow: 0 0 32px rgba(0, 255, 163, 0.55); }
+}
+
+.mg-check-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #00ffa3;
+  color: #031c15;
+  font-size: 12px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 12px rgba(0, 255, 163, 0.8);
+}
+
+/* Alert Pill */
+.mg-alert-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(255, 208, 67, 0.12);
+  border: 1px solid rgba(255, 208, 67, 0.4);
+  font-family: var(--font-hud);
+  font-size: 10.5px;
+  color: #ffd043;
+  letter-spacing: 1px;
+}
+
+.mg-title {
+  font-family: var(--font-hud);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 0;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.35);
+}
+
+.mg-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(214, 226, 240, 0.85);
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 0;
+}
+
+.mg-desc b {
+  color: #ffffff;
+}
+
+.mg-desc strong {
+  color: #00ffa3;
+}
+
+.mg-specs-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11.5px;
+}
+
+.mg-spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mg-spec-row span {
+  color: var(--muted);
+}
+
+.mg-spec-row strong {
+  font-family: var(--font-hud);
+}
+
+.mg-footer {
+  width: 100%;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mg-bypass-btn {
+  background: transparent;
+  border: none;
+  color: rgba(214, 226, 240, 0.45);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 4px 8px;
+}
+
+.mg-bypass-btn:hover {
+  color: rgba(214, 226, 240, 0.85);
+  text-decoration: underline;
+}
+
+
 
 
 
