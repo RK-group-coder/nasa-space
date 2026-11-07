@@ -7151,6 +7151,70 @@
   box-shadow: 0 0 12px rgba(0, 255, 163, 0.2);
 }
 
+/* System Priority Marker (系統重點標記 · 點擊鎖定) */
+.btn-sop-lock-focus {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-sop-lock-focus:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 208, 67, 0.45);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+.btn-sop-lock-focus.is-locked {
+  background: linear-gradient(135deg, rgba(255, 208, 67, 0.22) 0%, rgba(217, 119, 6, 0.28) 100%);
+  border: 1.5px solid #ffd043;
+  color: #fff2a8;
+  font-weight: 700;
+  box-shadow: 0 0 18px rgba(255, 208, 67, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.btn-sop-lock-focus.is-locked .sop-lock-icon {
+  color: #ffd043;
+  filter: drop-shadow(0 0 5px rgba(255, 208, 67, 0.6));
+  animation: lockClickPulse 0.3s ease-out;
+}
+@keyframes lockClickPulse {
+  0% { transform: scale(0.85); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.btn-sop-lock-focus:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.sop-locked-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: rgba(255, 208, 67, 0.18);
+  border: 1px solid rgba(255, 208, 67, 0.55);
+  color: #ffe685;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(255, 208, 67, 0.25);
+  animation: pulsePriorityLock 2.4s infinite ease-in-out;
+}
+@keyframes pulsePriorityLock {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 208, 67, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(255, 208, 67, 0.5); }
+}
+
 /* Modal styles for Flight Surgeon Brief */
 .sop-brief-modal-backdrop {
   position: fixed;

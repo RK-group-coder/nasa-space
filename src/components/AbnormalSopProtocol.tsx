@@ -17,6 +17,7 @@ import {
   Eye,
   Mic,
   Info,
+  Lock,
 } from 'lucide-react'
 import {
   evaluate,
@@ -41,7 +42,8 @@ export interface StoredSymptomLog {
   symptoms: string[]
   notes: string
   savedAt: string
-  doctorNotified: boolean
+  isPriorityLocked?: boolean
+  doctorNotified?: boolean
 }
 
 const SYMPTOM_OPTIONS = [
@@ -116,7 +118,7 @@ export default function AbnormalSopProtocol({
   const [symptoms, setSymptoms] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   const [savedAt, setSavedAt] = useState<string | null>(null)
-  const [doctorNotified, setDoctorNotified] = useState(false)
+  const [isPriorityLocked, setIsPriorityLocked] = useState(false)
 
   // Load symptom log from localStorage
   useEffect(() => {
@@ -127,12 +129,12 @@ export default function AbnormalSopProtocol({
         setSymptoms(parsed.symptoms || [])
         setNotes(parsed.notes || '')
         setSavedAt(parsed.savedAt || null)
-        setDoctorNotified(Boolean(parsed.doctorNotified))
+        setIsPriorityLocked(Boolean(parsed.isPriorityLocked || parsed.doctorNotified))
       } else {
         setSymptoms([])
         setNotes('')
         setSavedAt(null)
-        setDoctorNotified(false)
+        setIsPriorityLocked(false)
       }
     } catch {
       // fallback
@@ -140,7 +142,7 @@ export default function AbnormalSopProtocol({
   }, [storageKey])
 
   // Save symptom log to localStorage
-  const saveLog = (nextSymptoms: string[], nextNotes: string, nextNotified = doctorNotified) => {
+  const saveLog = (nextSymptoms: string[], nextNotes: string, nextLocked = isPriorityLocked) => {
     const timestamp = new Date().toLocaleTimeString(lang === 'en' ? 'en-US' : 'zh-TW', {
       hour: '2-digit',
       minute: '2-digit',
@@ -150,7 +152,8 @@ export default function AbnormalSopProtocol({
       symptoms: nextSymptoms,
       notes: nextNotes,
       savedAt: timestamp,
-      doctorNotified: nextNotified,
+      isPriorityLocked: nextLocked,
+      doctorNotified: nextLocked,
     }
     try {
       localStorage.setItem(storageKey, JSON.stringify(data))
@@ -185,10 +188,10 @@ export default function AbnormalSopProtocol({
     saveLog(symptoms, notes)
   }
 
-  const toggleDoctorNotified = () => {
+  const togglePriorityLock = () => {
     if (!isToday) return
-    const next = !doctorNotified
-    setDoctorNotified(next)
+    const next = !isPriorityLocked
+    setIsPriorityLocked(next)
     saveLog(symptoms, notes, next)
   }
 
@@ -292,6 +295,7 @@ export default function AbnormalSopProtocol({
     }
 
     lines.push(`------------------------------------------------------`)
+    lines.push(`【系統重點標記狀態】: ${isPriorityLocked ? '🔒 已鎖定為任務重點追蹤個案 (SYSTEM PRIORITY LOCKED)' : '未鎖定'}`)
     lines.push(`【臨床通報備書與處置決策】:`)
     lines.push(`1. 本單次異常已遵循 4 步驟 SOP 完成測試條件覆核。`)
     lines.push(`2. 自覺症狀與持續偏離達深空遠距醫療通報標準。`)
@@ -320,6 +324,12 @@ export default function AbnormalSopProtocol({
             <div className="sop-tagline">
               <span className="sop-pill-nasa">NASA HRP 臨床監護標準</span>
               <span className="sop-pill-rule">異常處置 4 階段 SOP 規範</span>
+              {isPriorityLocked && (
+                <span className="sop-locked-header-badge">
+                  <Lock size={11} />
+                  <span>{lang === 'en' ? 'System Priority: Locked' : '系統重點標記 · 已鎖定'}</span>
+                </span>
+              )}
             </div>
             <h4>
               {lang === 'en'
@@ -513,19 +523,24 @@ export default function AbnormalSopProtocol({
 
                   <button
                     type="button"
-                    className={`btn-sop-notified ${doctorNotified ? 'is-notified' : ''}`}
-                    onClick={toggleDoctorNotified}
+                    className={`btn-sop-lock-focus ${isPriorityLocked ? 'is-locked' : ''}`}
+                    onClick={togglePriorityLock}
                     disabled={!isToday}
+                    title={
+                      isPriorityLocked
+                        ? (lang === 'en' ? 'System Priority Marker: Locked (Click to unlock)' : '系統重點標記：已鎖定追蹤（點擊可解除鎖定）')
+                        : (lang === 'en' ? 'Click to lock as System Priority Marker' : '點擊鎖定為系統重點標記')
+                    }
                   >
-                    <CheckCircle2 size={15} />
+                    <Lock size={15} className={`sop-lock-icon ${isPriorityLocked ? 'is-locked-anim' : ''}`} />
                     <span>
-                      {doctorNotified
+                      {isPriorityLocked
                         ? lang === 'en'
-                          ? '✓ Ground Medical Officer Notified'
-                          : '✓ 已通報地面醫官（待回覆）'
+                          ? '🔒 System Priority Marker (Locked)'
+                          : '🔒 系統重點標記（已鎖定）'
                         : lang === 'en'
-                        ? 'Mark as Notified Ground Doctor'
-                        : '標記為「已通報地面醫官」'}
+                        ? 'System Priority Marker (Click to Lock)'
+                        : '系統重點標記（點擊鎖定）'}
                     </span>
                   </button>
                 </div>
@@ -573,6 +588,14 @@ export default function AbnormalSopProtocol({
                 <div className="sbm-meta-item">
                   <span className="sbm-label">{lang === 'en' ? 'Cabin Environment' : '艙內環境'}</span>
                   <b>CO₂ {env.co2.toFixed(1)} mmHg · {env.cumulative.toFixed(0)} mSv</b>
+                </div>
+                <div className="sbm-meta-item">
+                  <span className="sbm-label">{lang === 'en' ? 'System Focus Status' : '系統重點標記'}</span>
+                  <b style={{ color: isPriorityLocked ? '#ffd043' : '#94a3b8' }}>
+                    {isPriorityLocked
+                      ? lang === 'en' ? '🔒 Locked Focus' : '🔒 已鎖定重點'
+                      : lang === 'en' ? 'Unlocked' : '未鎖定'}
+                  </b>
                 </div>
               </div>
 
