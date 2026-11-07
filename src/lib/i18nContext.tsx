@@ -78,9 +78,11 @@ export const DICTIONARY: Record<Lang, Record<string, string>> = {
     'level.advisory': 'ADVISORY 注意',
     'level.warning': 'WARNING 警戒',
     'level.untested': '未測驗',
+    'level.insufficient': '資料不足／需重測',
     'level.nominal.short': '健全',
     'level.advisory.short': '注意',
     'level.warning.short': '警戒',
+    'level.insufficient.short': '需重測',
 
     // Immune Vulnerability Index (IVI)
     'immune.title': '綜合免疫脆弱度指數 (IVI)',
@@ -224,9 +226,11 @@ export const DICTIONARY: Record<Lang, Record<string, string>> = {
     'level.advisory': 'ADVISORY',
     'level.warning': 'WARNING',
     'level.untested': 'UNTESTED',
+    'level.insufficient': 'INSUFFICIENT DATA / RETEST REQUIRED',
     'level.nominal.short': 'Nominal',
     'level.advisory.short': 'Advisory',
     'level.warning.short': 'Warning',
+    'level.insufficient.short': 'Retest',
 
     // Immune Vulnerability Index (IVI)
     'immune.title': 'Immune Vulnerability Index (IVI)',

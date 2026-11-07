@@ -210,7 +210,21 @@ export default function VoiceTest({
     } catch {}
   }
 
-  const exitFullscreenAndReset = () => {
+  const exitFullscreenAndReset = (userAborted = false) => {
+    if (userAborted && phase === 'recording' && progress < 0.9) {
+      const reason =
+        appLang === 'en'
+          ? 'Acoustic test aborted by astronaut before completing standardized passage reading'
+          : '太空人提前中止語音朗讀，未完成標準短文收音'
+      setMsg(reason)
+      onResult({
+        jitter: 0,
+        pause: 0,
+        stress: 0,
+        insufficient: true,
+        reason,
+      })
+    }
     cleanupAudio()
     if (document.fullscreenElement) {
       try {
@@ -246,12 +260,25 @@ export default function VoiceTest({
     }
 
     if (totalTransitions < 18 && voicedPitches.length < 20) {
-      setFsWarn(
+      const reason =
         appLang === 'en'
-          ? 'Insufficient continuous speech detected. Please ensure microphone is active and read continuously.'
-          : '未偵測到足夠長度的連續朗讀語音，請確認麥克風未靜音，並持續朗讀短文至少 18–30 秒。'
-      )
-      setPhase('rules')
+          ? 'Microphone muted or insufficient continuous speech frames (< 10s valid voice)'
+          : '未收錄到有效長度之連續語音或麥克風音量過低（未達 10 秒有效語音）'
+      setMsg(reason)
+      if (document.fullscreenElement) {
+        try {
+          document.exitFullscreen?.().catch(() => {})
+        } catch {}
+      }
+      setIsFullscreen(false)
+      setPhase('idle')
+      onResult({
+        jitter: 0,
+        pause: 0,
+        stress: 0,
+        insufficient: true,
+        reason,
+      })
       return
     }
 
@@ -339,6 +366,7 @@ export default function VoiceTest({
     }
     setIsFullscreen(false)
     setPhase('idle')
+    setMsg('')
     onResult({
       jitter,
       pause,
@@ -346,6 +374,7 @@ export default function VoiceTest({
       textMatch,
       pitchInstability,
       anomalyTag,
+      insufficient: false,
     })
   }
 
@@ -523,7 +552,8 @@ export default function VoiceTest({
         }
         duration="≈ 30 s"
         level={level}
-        done={!!r}
+        done={!!r && !r.insufficient}
+        insufficient={!!r?.insufficient}
       >
         <button
           type="button"
@@ -534,7 +564,11 @@ export default function VoiceTest({
             <Volume2 size={24} />
           </div>
           <span>
-            {msg
+            {r?.insufficient
+              ? appLang === 'en'
+                ? '⚠️ Voice Data Insufficient · Click to Retest'
+                : '⚠️ 語音資料不足 · 點擊全螢幕重新朗讀測驗'
+              : msg
               ? msg
               : r
               ? appLang === 'en'
@@ -546,18 +580,49 @@ export default function VoiceTest({
           </span>
         </button>
 
+        {r?.insufficient && (
+          <div className="insufficient-alert-card">
+            <div className="iac-head">
+              <AlertTriangle size={18} className="iac-icon" />
+              <div>
+                <strong>{appLang === 'en' ? 'Data Insufficient / Retest Required' : '資料不足／需要重測'}</strong>
+                <p>{r.reason || (appLang === 'en' ? 'Insufficient voiced frames or microphone volume too low' : '有效語音訊框不足或麥克風音量過低')}</p>
+              </div>
+            </div>
+            <div className="iac-clinical-note">
+              {appLang === 'en'
+                ? 'Clinical Rule: Indeterminate speech recordings cannot be assumed nominal.'
+                : '監護原則：無法判讀之語音錄音不可盲信為正常，請依標準語速重新朗讀。'}
+            </div>
+          </div>
+        )}
+
         <div className="stats stats-uniform stats-4col">
-          <Stat label={appLang === 'en' ? 'Stress Index' : '壓力指數'} value={r ? r.stress : '—'} unit={r ? ' /100' : ''} />
-          <Stat label="F0 Jitter" value={r ? r.jitter : '—'} unit={r ? ' %' : ''} />
-          <Stat label={appLang === 'en' ? 'Pause Ratio' : '停頓比'} value={r ? `${Math.round(r.pause * 100)}` : '—'} unit={r ? ' %' : ''} />
-          {r?.textMatch !== undefined ? (
+          <Stat
+            label={appLang === 'en' ? 'Stress Index' : '壓力指數'}
+            value={!r ? '—' : r.insufficient ? '— (需重測)' : r.stress}
+            unit={r && !r.insufficient ? ' /100' : ''}
+          />
+          <Stat
+            label="F0 Jitter"
+            value={!r ? '—' : r.insufficient ? '— (需重測)' : r.jitter}
+            unit={r && !r.insufficient ? ' %' : ''}
+          />
+          <Stat
+            label={appLang === 'en' ? 'Pause Ratio' : '停頓比'}
+            value={!r ? '—' : r.insufficient ? '—' : `${Math.round(r.pause * 100)}`}
+            unit={r && !r.insufficient ? ' %' : ''}
+          />
+          {r?.insufficient ? (
+            <Stat label={appLang === 'en' ? 'Speech Status' : '聲學狀態'} value="需重測" />
+          ) : r?.textMatch !== undefined ? (
             <Stat label={appLang === 'en' ? 'Passage Match' : '文本匹配'} value={`${r.textMatch}`} unit=" %" />
           ) : (
             <Stat label={appLang === 'en' ? 'Speech Status' : '聲學狀態'} value={r ? 'NOMINAL' : '—'} />
           )}
         </div>
 
-        {r?.anomalyTag && (
+        {r?.anomalyTag && !r.insufficient && (
           <div className="voice-card-anomaly-badge" role="alert">
             <AlertTriangle size={14} className="voice-alert-icon" />
             <span>
@@ -567,7 +632,7 @@ export default function VoiceTest({
           </div>
         )}
 
-        <StartTestButton id="btn-voice" done={!!r} onClick={handleStartFullscreen} />
+        <StartTestButton id="btn-voice" done={!!r && !r.insufficient} onClick={handleStartFullscreen} />
       </TestCard>
 
       {/* 2. Fullscreen Clinical Vocal Biomarker Modal */}
@@ -608,7 +673,7 @@ export default function VoiceTest({
 
               <button
                 className="rppg-fs-btn-exit"
-                onClick={exitFullscreenAndReset}
+                onClick={() => exitFullscreenAndReset(true)}
                 title="退出全螢幕 (ESC)"
               >
                 <X size={16} /> {appLang === 'en' ? 'Exit Fullscreen (ESC)' : '退出全螢幕 (ESC)'}

@@ -188,7 +188,19 @@ export default function AmslerTest({
     } catch {}
   }
 
-  const exitFullscreenAndReset = () => {
+  const exitFullscreenAndReset = (userAborted = false) => {
+    if (userAborted && phase !== 'idle') {
+      const reason =
+        lang === 'en'
+          ? 'Binocular visual test aborted early (both eyes not completed). SANS blind-spot assessment insufficient.'
+          : '雙眼視野檢測未完整完成（僅測試單眼或提前中斷），SANS 視網膜盲區數據不足'
+      onResult({
+        marks: 0,
+        eyes: '未完成',
+        insufficient: true,
+        reason,
+      })
+    }
     if (document.fullscreenElement) {
       try {
         document.exitFullscreen?.().catch(() => {})
@@ -225,7 +237,7 @@ export default function AmslerTest({
     }
     setIsFullscreen(false)
     setPhase('idle')
-    onResult(analyzed)
+    onResult({ ...analyzed, insufficient: false })
   }
 
   const progressPct =
@@ -256,7 +268,8 @@ export default function AmslerTest({
         }
         duration="≈ 30 s"
         level={level}
-        done={!!r}
+        done={!!r && !r.insufficient}
+        insufficient={!!r?.insufficient}
       >
         <button
           type="button"
@@ -267,7 +280,11 @@ export default function AmslerTest({
             <span className="amsler-pad-dot" />
           </div>
           <span>
-            {r
+            {r?.insufficient
+              ? lang === 'en'
+                ? '⚠️ Vision Data Insufficient · Click to Retest'
+                : '⚠️ 視野數據不足 · 點擊全螢幕重新檢測'
+              : r
               ? lang === 'en'
                 ? 'Binocular scan complete · Click to retest fullscreen'
                 : '雙眼篩檢完成 · 點擊可全螢幕重新測驗'
@@ -277,27 +294,56 @@ export default function AmslerTest({
           </span>
         </button>
 
+        {r?.insufficient && (
+          <div className="insufficient-alert-card">
+            <div className="iac-head">
+              <AlertTriangle size={18} className="iac-icon" />
+              <div>
+                <strong>{lang === 'en' ? 'Data Insufficient / Retest Required' : '資料不足／需要重測'}</strong>
+                <p>{r.reason || (lang === 'en' ? 'Binocular visual grid scan incomplete' : '雙眼視野掃描未完成')}</p>
+              </div>
+            </div>
+            <div className="iac-clinical-note">
+              {lang === 'en'
+                ? 'Clinical Rule: SANS choroidal folds cannot be ruled out without binocular fixation.'
+                : '監護原則：未完成雙眼中心凝視，無法排除微重力頭向體液轉移所致視網膜微褶。'}
+            </div>
+          </div>
+        )}
+
         <div className="stats stats-uniform stats-4col">
           <Stat
             label={lang === 'en' ? 'OD (Right)' : '右眼 (OD)'}
-            value={r ? (r.rightMarks ?? 0) : '—'}
-            unit={r ? (lang === 'en' ? ' cells' : ' 格') : ''}
+            value={!r ? '—' : r.insufficient ? '— (需重測)' : (r.rightMarks ?? 0)}
+            unit={r && !r.insufficient ? (lang === 'en' ? ' cells' : ' 格') : ''}
           />
           <Stat
             label={lang === 'en' ? 'OS (Left)' : '左眼 (OS)'}
-            value={r ? (r.leftMarks ?? 0) : '—'}
-            unit={r ? (lang === 'en' ? ' cells' : ' 格') : ''}
+            value={!r ? '—' : r.insufficient ? '— (需重測)' : (r.leftMarks ?? 0)}
+            unit={r && !r.insufficient ? (lang === 'en' ? ' cells' : ' 格') : ''}
           />
           <Stat
             label={lang === 'en' ? 'Fixation Dist' : '距紅點'}
-            value={!r ? '—' : r.minEccentricity != null ? r.minEccentricity : lang === 'en' ? 'Normal' : '正常'}
-            unit={r && r.minEccentricity != null ? '°' : ''}
+            value={
+              !r
+                ? '—'
+                : r.insufficient
+                ? '—'
+                : r.minEccentricity != null
+                ? r.minEccentricity
+                : lang === 'en'
+                ? 'Normal'
+                : '正常'
+            }
+            unit={r && !r.insufficient && r.minEccentricity != null ? '°' : ''}
           />
           <Stat
             label={lang === 'en' ? 'Affected Zone' : '受影響區'}
             value={
               !r
                 ? '—'
+                : r.insufficient
+                ? '需重測'
                 : r.marks === 0
                 ? lang === 'en'
                   ? 'None'
@@ -317,7 +363,7 @@ export default function AmslerTest({
           />
         </div>
 
-        <StartTestButton id="btn-amsler" done={!!r} onClick={handleStartFullscreen} />
+        <StartTestButton id="btn-amsler" done={!!r && !r.insufficient} onClick={handleStartFullscreen} />
       </TestCard>
 
       {/* 2. Fullscreen Black-Screen Clinical Darkroom Modal */}
@@ -368,7 +414,7 @@ export default function AmslerTest({
 
               <button
                 className="rppg-fs-btn-exit"
-                onClick={exitFullscreenAndReset}
+                onClick={() => exitFullscreenAndReset(true)}
                 title="退出全螢幕 (ESC)"
               >
                 <X size={16} /> {lang === 'en' ? 'Exit Fullscreen (ESC)' : '退出全螢幕 (ESC)'}

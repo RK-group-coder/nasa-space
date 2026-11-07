@@ -86,8 +86,15 @@ export default function App() {
     toggleActionForDate(selectedDate, key, val)
 
   const coreKeys = ['pvt', 'amsler', 'rppg', 'voice'] as const
-  const done = coreKeys.filter((k) => Boolean(activeResults[k])).length
-  const allDone = done === coreKeys.length
+  const validDone = coreKeys.filter((k) => {
+    const r = activeResults[k] as any
+    return Boolean(r && !r.insufficient)
+  }).length
+  const insufficientCount = coreKeys.filter((k) => {
+    const r = activeResults[k] as any
+    return Boolean(r?.insufficient)
+  }).length
+  const allDone = validDone === coreKeys.length
 
   const handleSelectDate = (d: Date) => {
     setSelectedDate(d)
@@ -157,23 +164,29 @@ export default function App() {
                     { k: 'rppg', label: lang === 'en' ? '03 Pulse / HRV' : '03 心血管脈搏' },
                     { k: 'voice', label: lang === 'en' ? '04 Voice Stress' : '04 語音壓力' },
                   ].map((item) => {
-                    const isDone = Boolean(activeResults[item.k as keyof Results])
+                    const rItem = activeResults[item.k as keyof Results] as any
+                    const isDone = Boolean(rItem && !rItem.insufficient)
+                    const isInsufficient = Boolean(rItem?.insufficient)
+                    const pillClass = isDone ? 'done' : isInsufficient ? 'insufficient' : ''
                     return (
-                      <span key={item.k} className={`triage-check-pill ${isDone ? 'done' : ''}`}>
-                        <i>{isDone ? '✓' : '○'}</i> {item.label}
+                      <span key={item.k} className={`triage-check-pill ${pillClass}`}>
+                        <i>{isDone ? '✓' : isInsufficient ? '⚠️' : '○'}</i> {item.label}
+                        {isInsufficient && <small className="pill-retest-tag">{lang === 'en' ? 'Retest' : '需重測'}</small>}
                       </span>
                     )
                   })}
                 </div>
 
-                <span className={`triage-prog ${allDone ? 'all-done' : ''}`}>
+                <span className={`triage-prog ${allDone ? 'all-done' : insufficientCount > 0 ? 'has-insufficient' : ''}`}>
                   <ClipboardList size={14} />
                   {isToday
                     ? allDone
                       ? t('app.allDone')
+                      : insufficientCount > 0
+                      ? (lang === 'en' ? 'Retest Required' : '包含需重測項目')
                       : t('app.triageProgress')
                     : `${shortDate} ${lang === 'en' ? 'Records' : '測驗紀錄'}`}
-                  <em>{done}/4</em>
+                  <em>{validDone}/4</em>
                 </span>
               </div>
               <div className="triage-layout">

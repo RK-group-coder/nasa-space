@@ -223,7 +223,7 @@
 }
 
 /* Levels */
-.lv-nominal { --lv: var(--green); } .lv-advisory { --lv: var(--amber); } .lv-warning { --lv: var(--red); }
+.lv-nominal { --lv: var(--green); } .lv-advisory { --lv: var(--amber); } .lv-warning { --lv: var(--red); } .lv-insufficient { --lv: #c084fc; }
 .badge { font-family: var(--font-hud); font-size: 10px; letter-spacing: 1px; padding: 4px 9px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
 .badge-nominal { color: var(--green); border-color: rgba(0,255,163,.55); background: rgba(0,255,163,.16); box-shadow: 0 0 10px rgba(0,255,163,.25); text-shadow: 0 0 8px rgba(0,255,163,.5); }
 .badge-advisory { color: #ffd859; border-color: rgba(255,208,67,.72); background: rgba(255,208,67,.16); box-shadow: 0 0 12px rgba(255,208,67,.3); text-shadow: 0 0 8px rgba(255,208,67,.55); }
@@ -234,7 +234,20 @@
   background: rgba(255, 255, 255, 0.06);
   letter-spacing: 0.6px;
 }
+.badge-insufficient {
+  color: #f0abfc;
+  border-color: rgba(232, 121, 249, 0.65);
+  background: rgba(192, 132, 252, 0.16);
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.28);
+  text-shadow: 0 0 8px rgba(232, 121, 249, 0.5);
+  letter-spacing: 0.6px;
+  animation: pulse-insufficient 2s infinite ease-in-out;
+}
 @keyframes blink { 50% { opacity: .6; } }
+@keyframes pulse-insufficient {
+  0%, 100% { border-color: rgba(232, 121, 249, 0.65); box-shadow: 0 0 12px rgba(192, 132, 252, 0.28); }
+  50% { border-color: rgba(251, 191, 36, 0.7); box-shadow: 0 0 16px rgba(251, 191, 36, 0.35); }
+}
 
 /* Progress */
 .progress { height: 4px; background: rgba(255,255,255,.08); border-radius: 4px; overflow: hidden; }
@@ -924,6 +937,7 @@
 }
 .test-card:hover { border-color: rgba(235,245,255,.45); box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 12px 32px rgba(0,0,0,.42), 0 0 24px rgba(235,245,255,.08); }
 .test-card.is-done { border-color: rgba(0, 255, 163, 0.45); box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 10px 28px rgba(0,0,0,.38), 0 0 22px rgba(0, 255, 163, 0.12); }
+.test-card.is-insufficient { border-color: rgba(232, 121, 249, 0.6); box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 10px 28px rgba(0,0,0,.38), 0 0 22px rgba(192, 132, 252, 0.2); }
 
 /* Daily Completion Status Ribbon at top of each card */
 .test-today-ribbon {
@@ -948,6 +962,12 @@
   color: var(--green);
   box-shadow: 0 0 14px rgba(0, 255, 163, 0.18);
 }
+.test-today-ribbon.is-insufficient {
+  background: rgba(192, 132, 252, 0.16);
+  border: 1px solid rgba(232, 121, 249, 0.6);
+  color: #f0abfc;
+  box-shadow: 0 0 14px rgba(192, 132, 252, 0.22);
+}
 .today-ribbon-status {
   display: inline-flex;
   align-items: center;
@@ -962,6 +982,14 @@
 .test-today-ribbon.is-done .today-ribbon-dot {
   background: var(--green);
   box-shadow: 0 0 8px var(--green);
+}
+.test-today-ribbon.is-insufficient .today-ribbon-dot {
+  background: #f472b6;
+  box-shadow: 0 0 8px #f472b6;
+  animation: pulse-insufficient 1.8s infinite ease-in-out;
+}
+.test-today-ribbon.is-insufficient .duration {
+  color: #fbcfe8;
 }
 
 .test-head {
@@ -3120,6 +3148,16 @@
   box-shadow: none;
   animation: none;
 }
+.hot.lv-insufficient i {
+  background: #c084fc;
+  border-color: #fbcfe8;
+  box-shadow: 0 0 12px #c084fc, 0 0 24px rgba(192, 132, 252, 0.7);
+}
+.hot.lv-insufficient i::after {
+  border-color: #f472b6;
+  box-shadow: 0 0 10px rgba(244, 114, 182, 0.6);
+  animation: ping 1.3s ease-out infinite;
+}
 .hot.sel i {
   transform: scale(1.4);
   background: #ffd043 !important;
@@ -4827,6 +4865,14 @@
   text-shadow: 0 0 6px rgba(255, 77, 94, 0.42);
 }
 
+.organ-tab-btn.is-insufficient:not(.active) {
+  background: rgba(192, 132, 252, 0.15);
+  border: 1px solid rgba(232, 121, 249, 0.65);
+  color: #f0abfc;
+  box-shadow: 0 0 14px rgba(192, 132, 252, 0.26);
+  text-shadow: 0 0 6px rgba(232, 121, 249, 0.45);
+}
+
 .organ-tab-btn.is-untested:not(.active) {
   background: rgba(255, 255, 255, 0.04);
   border: 1px dashed rgba(214, 226, 240, 0.28);
@@ -4864,7 +4910,26 @@
   line-height: 1.2;
 }
 
+.tab-insufficient-pill {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 99px;
+  color: #fdf2f8;
+  background: rgba(219, 39, 119, 0.35);
+  border: 1px solid rgba(244, 114, 182, 0.65);
+  line-height: 1.2;
+  animation: pulse-insufficient 2s infinite ease-in-out;
+}
+
 .organ-tab-btn.active .tab-untested-pill {
+  color: #fff5aa;
+  background: rgba(0, 0, 0, 0.32);
+  border-color: rgba(255, 208, 67, 0.55);
+}
+
+.organ-tab-btn.active .tab-insufficient-pill {
   color: #fff5aa;
   background: rgba(0, 0, 0, 0.32);
   border-color: rgba(255, 208, 67, 0.55);
@@ -6467,6 +6532,237 @@
 .mg-bypass-btn:hover {
   color: rgba(214, 226, 240, 0.85);
   text-decoration: underline;
+}
+
+/* ==========================================================================
+   Clinical Indeterminate / Retest Required Protocol Styles
+   ========================================================================== */
+.insufficient-alert-card {
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.32) 0%, rgba(30, 27, 75, 0.52) 100%);
+  border: 1px solid rgba(216, 180, 254, 0.45);
+  border-left: 3.5px solid #e879f9;
+  border-radius: 9px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+.insufficient-alert-card .iac-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.insufficient-alert-card .iac-icon {
+  color: #f472b6;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.insufficient-alert-card strong {
+  display: block;
+  font-size: 13px;
+  color: #fbcfe8;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.insufficient-alert-card p {
+  font-size: 11.5px;
+  color: rgba(243, 232, 255, 0.85);
+  margin-top: 2px;
+  line-height: 1.45;
+}
+.insufficient-alert-card .iac-clinical-note {
+  font-size: 11px;
+  color: #fde047;
+  background: rgba(253, 224, 71, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 2px solid #facc15;
+  line-height: 1.35;
+}
+
+/* Insufficient Organ Screen in Digital Twin */
+.insufficient-twin-prompt {
+  background: linear-gradient(145deg, rgba(30, 20, 50, 0.7) 0%, rgba(15, 12, 28, 0.85) 100%);
+  border: 1.5px solid rgba(216, 180, 254, 0.35);
+  border-radius: 12px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(192, 132, 252, 0.08);
+}
+.itp-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+.itp-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  font-family: var(--font-hud);
+  color: #f0abfc;
+  background: rgba(192, 132, 252, 0.16);
+  border: 1px solid rgba(232, 121, 249, 0.55);
+  padding: 3px 8px;
+  border-radius: 99px;
+  align-self: flex-start;
+  animation: pulse-insufficient 2s infinite ease-in-out;
+}
+.itp-banner h4 {
+  font-size: 16px;
+  color: #fdf2f8;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+.itp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.itp-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #f472b6;
+  font-family: var(--font-hud);
+  margin-bottom: 3px;
+}
+.itp-reason-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+.itp-reason-box p {
+  color: #fbcfe8;
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.5;
+}
+.itp-principle-quote {
+  background: rgba(234, 179, 8, 0.09);
+  border-left: 3.5px solid #eab308;
+  padding: 11px 14px;
+  border-radius: 0 8px 8px 0;
+}
+.itp-principle-quote b {
+  display: block;
+  color: #fde047;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.itp-principle-quote p {
+  color: rgba(254, 240, 138, 0.9);
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.55;
+}
+.itp-retest-guide {
+  background: rgba(16, 230, 160, 0.08);
+  border-left: 3.5px solid var(--green);
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+}
+.itp-retest-guide p {
+  color: rgba(220, 252, 231, 0.92);
+  font-size: 12.5px;
+  margin: 0;
+  line-height: 1.5;
+}
+.itp-retest-btn {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #a855f7 0%, #d946ef 100%) !important;
+  border: 1px solid #f0abfc !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 0 20px rgba(217, 70, 239, 0.45) !important;
+  height: 44px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.itp-retest-btn:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 26px rgba(217, 70, 239, 0.65) !important;
+  transform: translateY(-1px);
+}
+
+/* Triage Page Header Status Elements */
+.triage-check-pill.insufficient {
+  border-color: rgba(232, 121, 249, 0.6);
+  background: rgba(192, 132, 252, 0.16);
+  color: #f0abfc;
+}
+.triage-check-pill.insufficient i {
+  color: #f472b6;
+}
+.pill-retest-tag {
+  font-size: 9px;
+  background: rgba(219, 39, 119, 0.35);
+  border: 1px solid rgba(244, 114, 182, 0.5);
+  color: #fbcfe8;
+  padding: 0 4px;
+  border-radius: 4px;
+  margin-left: 3px;
+  font-weight: 700;
+}
+.triage-prog.has-insufficient {
+  border-color: rgba(232, 121, 249, 0.6);
+  color: #f0abfc;
+  background: rgba(192, 132, 252, 0.14);
+}
+.triage-prog.has-insufficient em {
+  background: rgba(219, 39, 119, 0.35);
+  color: #fdf2f8;
+  border: 1px solid rgba(244, 114, 182, 0.5);
+}
+
+/* Immune Dial Insufficient Notice */
+.immune-insufficient-notice {
+  margin-top: 10px;
+  background: rgba(192, 132, 252, 0.14);
+  border: 1px solid rgba(232, 121, 249, 0.45);
+  border-left: 3px solid #e879f9;
+  border-radius: 6px;
+  padding: 7px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 11px;
+  color: #fbcfe8;
+  line-height: 1.4;
+}
+.immune-insufficient-notice .iin-icon {
+  color: #f472b6;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.ib-val.is-insufficient {
+  color: #f0abfc;
+  font-size: 11px;
+}
+.ib-fill.fill-insufficient {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(192, 132, 252, 0.7),
+    rgba(192, 132, 252, 0.7) 6px,
+    rgba(219, 39, 119, 0.6) 6px,
+    rgba(219, 39, 119, 0.6) 12px
+  );
+  box-shadow: 0 0 8px rgba(192, 132, 252, 0.45);
 }
 
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { AlertTriangle, Maximize2 } from 'lucide-react'
-import type { Level } from '../types/health'
+import type { Level, StatusLevel } from '../types/health'
 import { useCriteria } from '../lib/criteriaContext'
 import { useI18n } from '../lib/i18nContext'
 
@@ -9,21 +9,29 @@ const LABEL: Record<Level, string> = { nominal: 'NOMINAL', advisory: 'ADVISORY',
 export function Badge({
   level = 'nominal',
   untested = false,
+  insufficient = false,
   infoKey,
 }: {
-  level?: Level
+  level?: Level | StatusLevel
   untested?: boolean
+  insufficient?: boolean
   infoKey?: string
 }) {
   const { openCriteria, canViewAnalytics } = useCriteria()
   const { t } = useI18n()
   const helpTip = canViewAnalytics ? t('criteria.helpTip') : t('criteria.helpTipLocked')
+
+  const isUntested = untested || level === 'untested'
+  const isInsufficient = insufficient || level === 'insufficient'
+
   return (
     <span className="badge-group">
-      {untested ? (
+      {isUntested ? (
         <span className="badge badge-untested">{t('level.untested')}</span>
+      ) : isInsufficient ? (
+        <span className="badge badge-insufficient">{t('level.insufficient')}</span>
       ) : (
-        <span className={`badge badge-${level}`}>{LABEL[level]}</span>
+        <span className={`badge badge-${level}`}>{LABEL[level as Level] || level.toUpperCase()}</span>
       )}
       {infoKey && (
         <button
@@ -49,8 +57,9 @@ export function TestCard(props: {
   title: string
   sub: string
   duration: string
-  level?: Level
+  level?: Level | StatusLevel
   done?: boolean
+  insufficient?: boolean
   infoKey?: string
   children: ReactNode
 }) {
@@ -58,13 +67,31 @@ export function TestCard(props: {
   const { t, lang } = useI18n()
   const infoKey = props.infoKey || props.id.replace('test-', '')
   const helpTip = canViewAnalytics ? t('criteria.helpTip') : t('criteria.helpTipLocked')
+  const isInsufficient = Boolean(props.insufficient || props.level === 'insufficient')
 
   return (
-    <section id={props.id} className={`test-card ${props.done ? 'is-done' : ''}`}>
-      <div className={`test-today-ribbon ${props.done ? 'is-done' : 'is-pending'}`}>
+    <section
+      id={props.id}
+      className={`test-card ${props.done && !isInsufficient ? 'is-done' : ''} ${
+        isInsufficient ? 'is-insufficient' : ''
+      }`}
+    >
+      <div
+        className={`test-today-ribbon ${
+          isInsufficient
+            ? 'is-insufficient'
+            : props.done
+            ? 'is-done'
+            : 'is-pending'
+        }`}
+      >
         <span className="today-ribbon-status">
           <i className="today-ribbon-dot" />
-          {props.done
+          {isInsufficient
+            ? lang === 'en'
+              ? '⚠️ Retest Required / Data Insufficient'
+              : '⚠️ 資料不足／需要重測'
+            : props.done
             ? lang === 'en'
               ? '✓ Completed Today'
               : '✓ 今日已完成測驗'
@@ -82,7 +109,9 @@ export function TestCard(props: {
         </div>
         <div className="test-meta">
           {props.done && props.level ? (
-            <Badge level={props.level} infoKey={infoKey} />
+            <Badge level={props.level} insufficient={isInsufficient} infoKey={infoKey} />
+          ) : isInsufficient ? (
+            <Badge level="insufficient" insufficient={true} infoKey={infoKey} />
           ) : (
             <button
               type="button"

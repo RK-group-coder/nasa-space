@@ -1,7 +1,22 @@
 export type Level = 'nominal' | 'advisory' | 'warning'
+export type StatusLevel = 'untested' | 'insufficient' | 'nominal' | 'advisory' | 'warning'
 
-export interface RppgResult { bpm: number; hrv: number }
-export interface PvtResult { median: number; lapses: number; falseStarts: number; rts: number[] }
+export interface RppgResult {
+  bpm: number
+  hrv: number
+  insufficient?: boolean
+  reason?: string
+}
+
+export interface PvtResult {
+  median: number
+  lapses: number
+  falseStarts: number
+  rts: number[]
+  insufficient?: boolean
+  reason?: string
+}
+
 export interface AmslerResult {
   marks: number
   rightMarks?: number
@@ -13,7 +28,10 @@ export interface AmslerResult {
   minEccentricity?: number | null
   zoneSummary?: string
   eyes: string
+  insufficient?: boolean
+  reason?: string
 }
+
 export interface VoiceResult {
   jitter: number
   pause: number
@@ -21,6 +39,8 @@ export interface VoiceResult {
   textMatch?: number
   pitchInstability?: number
   anomalyTag?: string
+  insufficient?: boolean
+  reason?: string
 }
 export interface SquatResult { reps: number; depth: number; symmetry: number; dls: number }
 export interface BoneResult {

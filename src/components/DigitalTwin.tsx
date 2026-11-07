@@ -23,7 +23,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { formatShortDate, missionDay } from '../lib/missionHistory'
-import type { ActionItem, Env, Level, Results } from '../types/health'
+import type { ActionItem, Env, Level, StatusLevel, Results } from '../types/health'
 import { computeBoneLoss } from '../lib/boneModel'
 import { useI18n } from '../lib/i18nContext'
 
@@ -58,17 +58,25 @@ export default function DigitalTwin({
 
   const isOrganTested = (k: Key): boolean => {
     if (k === 'spine') return true
-    if (k === 'brain') return Boolean(effectiveResults.pvt)
-    if (k === 'eye') return Boolean(effectiveResults.amsler)
-    if (k === 'heart') return Boolean(effectiveResults.rppg)
-    return Boolean(effectiveResults.voice)
+    if (k === 'brain') return Boolean(effectiveResults.pvt) && !effectiveResults.pvt?.insufficient
+    if (k === 'eye') return Boolean(effectiveResults.amsler) && !effectiveResults.amsler?.insufficient
+    if (k === 'heart') return Boolean(effectiveResults.rppg) && !effectiveResults.rppg?.insufficient
+    return Boolean(effectiveResults.voice) && !effectiveResults.voice?.insufficient
+  }
+
+  const isOrganInsufficient = (k: Key): boolean => {
+    if (k === 'brain') return Boolean(effectiveResults.pvt?.insufficient)
+    if (k === 'eye') return Boolean(effectiveResults.amsler?.insufficient)
+    if (k === 'heart') return Boolean(effectiveResults.rppg?.insufficient)
+    if (k === 'voice') return Boolean(effectiveResults.voice?.insufficient)
+    return false
   }
 
   const testedCount = (['pvt', 'amsler', 'rppg', 'voice'] as const).filter((k) =>
-    Boolean(effectiveResults[k]),
+    Boolean(effectiveResults[k]) && !effectiveResults[k]?.insufficient,
   ).length
 
-  const regions: { k: Key; lvl: Level }[] = [
+  const regions: { k: Key; lvl: StatusLevel }[] = [
     { k: 'brain', lvl: s.cognition },
     { k: 'eye', lvl: s.eye },
     { k: 'heart', lvl: s.cardio },
@@ -95,7 +103,7 @@ export default function DigitalTwin({
     spine: 'bone',
   }
 
-  const organMeta: Record<Key, { title: string; level: Level; icon: typeof Heart }> = {
+  const organMeta: Record<Key, { title: string; level: StatusLevel; icon: typeof Heart }> = {
     heart: { title: lang === 'en' ? 'Cardiovascular & Autonomic' : '心血管自律神經系統', level: s.cardio, icon: Heart },
     brain: { title: lang === 'en' ? 'Central Nervous & PVT Reaction' : '中樞神經 · 精神運動警覺反應', level: s.cognition, icon: Brain },
     eye: { title: lang === 'en' ? 'SANS Retinal & Macular Grid' : 'SANS 視網膜神經與黃斑部', level: s.eye, icon: Eye },
@@ -123,11 +131,17 @@ export default function DigitalTwin({
           <div className="holo-grid-overlay" />
           {hotspots.map((h) => {
             const tested = isOrganTested(h.k)
+            const insufficient = isOrganInsufficient(h.k)
+            const hotClass = insufficient
+              ? 'lv-insufficient'
+              : tested
+              ? `lv-${lvOf(h.k)}`
+              : 'lv-untested'
             return (
               <button
                 key={h.id}
                 id={`hot-${h.id}`}
-                className={`hot ${tested ? `lv-${lvOf(h.k)}` : 'lv-untested'} ${sel === h.k ? 'sel' : ''}`}
+                className={`hot ${hotClass} ${sel === h.k ? 'sel' : ''}`}
                 style={{ left: `${h.x}%`, top: `${h.y}%` }}
                 onClick={() => setSel(h.k)}
                 aria-label={organMeta[h.k].title}
@@ -177,7 +191,11 @@ export default function DigitalTwin({
               <div>
                 <h3>{organMeta[sel].title}</h3>
                 <span className="panel-sub-label">
-                  {isOrganTested(sel)
+                  {isOrganInsufficient(sel)
+                    ? lang === 'en'
+                      ? '⚠️ Insufficient Data / Retest Required · Telemetry indeterminate'
+                      : '⚠️ 生理資料不足／需要重測 · 數據未達臨床判定閾值'
+                    : isOrganTested(sel)
                     ? sel === 'spine'
                       ? lang === 'en'
                         ? `Microgravity Continuous Bone Remodeling · Sol ${sol}`
@@ -193,7 +211,8 @@ export default function DigitalTwin({
             </div>
             <Badge
               level={organMeta[sel].level}
-              untested={!isOrganTested(sel)}
+              untested={!isOrganTested(sel) && !isOrganInsufficient(sel)}
+              insufficient={isOrganInsufficient(sel)}
               infoKey={organInfoKey[sel]}
             />
           </div>
@@ -205,6 +224,7 @@ export default function DigitalTwin({
               const Icon = meta.icon
               const isSelected = sel === r.k
               const tested = isOrganTested(r.k)
+              const insufficient = isOrganInsufficient(r.k)
               const labelMap: Record<Key, string> = {
                 heart: lang === 'en' ? 'Heart (rPPG)' : '心臟 (rPPG)',
                 brain: lang === 'en' ? 'Brain (PVT)' : '大腦 (PVT反應)',
@@ -212,15 +232,26 @@ export default function DigitalTwin({
                 voice: lang === 'en' ? 'Voice (Stress)' : '聲帶 (語音壓力)',
                 spine: lang === 'en' ? 'Skeleton (Bone)' : '骨骼 (骨質疏鬆推演)',
               }
+              const tabClass = isSelected
+                ? 'active'
+                : insufficient
+                ? 'is-insufficient'
+                : !tested
+                ? 'is-untested'
+                : `lv-${r.lvl}`
               return (
                 <button
                   key={r.k}
-                  className={`organ-tab-btn ${isSelected ? 'active' : ''} ${!tested ? 'is-untested' : `lv-${r.lvl}`}`}
+                  className={`organ-tab-btn ${tabClass}`}
                   onClick={() => setSel(r.k)}
                 >
                   <Icon size={13} />
                   <span>{labelMap[r.k]}</span>
-                  {!tested && <em className="tab-untested-pill">{lang === 'en' ? 'Pending' : '未測'}</em>}
+                  {insufficient ? (
+                    <em className="tab-insufficient-pill">{lang === 'en' ? 'Retest' : '需重測'}</em>
+                  ) : !tested ? (
+                    <em className="tab-untested-pill">{lang === 'en' ? 'Pending' : '未測'}</em>
+                  ) : null}
                 </button>
               )
             })}
@@ -381,6 +412,100 @@ function UntestedOrganPrompt({
 }
 
 /* ==========================================================================
+   Insufficient Organ Prompt (資料不足／需要重測專屬醫學診斷看板)
+   ========================================================================== */
+function InsufficientOrganPrompt({
+  sel,
+  reason,
+  isToday,
+  onStartTriage,
+}: {
+  sel: Key
+  reason?: string
+  isToday: boolean
+  onStartTriage?: () => void
+}) {
+  const { lang } = useI18n()
+  const organTitles: Record<Key, { name: string; failDefault: string; tip: string }> = {
+    heart: {
+      name: lang === 'en' ? 'Cardiovascular rPPG' : 'rPPG 心血管脈搏',
+      failDefault: lang === 'en' ? 'Optical arterial pulse signal weak, light too dim, or face tracking lost' : '光體積動脈脈搏波形微弱、光線過暗或臉部移動脫框',
+      tip: lang === 'en' ? 'Ensure uniform lighting (>300 Lux), keep face centered and still for 15s' : '請調亮面部光源（避免逆光與螢幕強烈色光），對準鏡頭靜止 15 秒重新測驗',
+    },
+    brain: {
+      name: lang === 'en' ? 'NASA-PVT Vigilance' : 'NASA-PVT 精神運動警覺',
+      failDefault: lang === 'en' ? 'Trials incomplete or excessive false starts (>3)' : '測驗未完成 5 次有效反應或搶跑次數過高',
+      tip: lang === 'en' ? 'Focus in a quiet cockpit environment and complete all 5 reaction triggers' : '請在無外部通訊干擾的環境中專注盯住螢幕，完整完成 5 次反應測試',
+    },
+    eye: {
+      name: lang === 'en' ? 'Amsler Visual Grid' : 'Amsler 數位視野篩檢',
+      failDefault: lang === 'en' ? 'Binocular fixation incomplete or aborted before both eyes tested' : '雙眼中心凝視未完整完成，未能取得中心視角 10 度之黃斑部網格數據',
+      tip: lang === 'en' ? 'Maintain 30-33 cm distance, test Right then Left eye while fixating red dot' : '請保持 30–33 cm 距離，依序遮蔽測試右眼與左眼，凝視紅點完成雙眼掃描',
+    },
+    voice: {
+      name: lang === 'en' ? 'Acoustic Voice Stress' : '聲學語音壓力',
+      failDefault: lang === 'en' ? 'Microphone muted or voiced frames under 10 seconds' : '未錄得有效長度之連續語音或麥克風音量過低（未達 10 秒）',
+      tip: lang === 'en' ? 'Close to microphone, speak at natural volume and read the standard passage' : '請靠近麥克風並確保環境靜音，以自然正常聲量清晰朗讀畫面短文',
+    },
+    spine: {
+      name: lang === 'en' ? 'Skeleton' : '骨骼系統',
+      failDefault: '',
+      tip: '',
+    },
+  }
+
+  const meta = organTitles[sel]
+
+  return (
+    <div className="insufficient-twin-prompt">
+      <div className="itp-banner">
+        <div className="itp-badge-tag">
+          <AlertTriangle size={15} />
+          <span>{lang === 'en' ? 'INSUFFICIENT DATA / RETEST REQUIRED' : '資料不足／需要重測'}</span>
+        </div>
+        <h4>
+          {lang === 'en'
+            ? `${meta.name} · Signal Inadequate for Clinical Assessment`
+            : `${meta.name} · 生理訊號未達臨床判定標準`}
+        </h4>
+      </div>
+
+      <div className="itp-body">
+        <div className="itp-reason-box">
+          <span className="itp-label">{lang === 'en' ? 'Indeterminate Reason' : '判讀失敗／資料不足原因'}</span>
+          <p>{reason || meta.failDefault}</p>
+        </div>
+
+        <div className="itp-principle-quote">
+          <b>{lang === 'en' ? 'Spaceflight Health Principle' : '深空自主健康管理核心準則'}</b>
+          <p>
+            {lang === 'en'
+              ? 'Knowing which data cannot yet be judged is critical. In deep space with communication delays, invalid or incomplete sensor signals must NEVER default to "healthy" to prevent catastrophic diagnostic blind spots.'
+              : '健康管理最關鍵的一點，是明確知道哪些資料「還不能做判斷」。在深空無隨艦醫生情境下，資料不足或受干擾之訊號嚴禁預設為健全，以防隱性急性失衡盲區。'}
+          </p>
+        </div>
+
+        <div className="itp-retest-guide">
+          <span className="itp-label">{lang === 'en' ? 'Calibration & Retest Protocol' : '建議重測校準指引'}</span>
+          <p>{meta.tip}</p>
+        </div>
+
+        {isToday && onStartTriage && (
+          <button
+            type="button"
+            className="btn-primary itp-retest-btn"
+            onClick={onStartTriage}
+          >
+            <AlertTriangle size={16} />
+            <span>{lang === 'en' ? 'Recalibrate & Retest Now' : '立即重新校準並重測'}</span>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ==========================================================================
    Organ-Specific Telemetry Visualizer (器官專屬高階遙測圖表)
    ========================================================================== */
 function OrganVisualizer({
@@ -401,6 +526,16 @@ function OrganVisualizer({
       const r = results.rppg
       if (!r) {
         return <UntestedOrganPrompt isToday={isToday} onStartTriage={onStartTriage} />
+      }
+      if (r.insufficient) {
+        return (
+          <InsufficientOrganPrompt
+            sel="heart"
+            reason={r.reason}
+            isToday={isToday}
+            onStartTriage={onStartTriage}
+          />
+        )
       }
       const bpm = r.bpm
       const hrv = r.hrv
@@ -533,6 +668,16 @@ function OrganVisualizer({
       const p = results.pvt
       if (!p) {
         return <UntestedOrganPrompt isToday={isToday} onStartTriage={onStartTriage} />
+      }
+      if (p.insufficient) {
+        return (
+          <InsufficientOrganPrompt
+            sel="brain"
+            reason={p.reason}
+            isToday={isToday}
+            onStartTriage={onStartTriage}
+          />
+        )
       }
       const medianRt = p.median
       const lapses = p.lapses
@@ -733,6 +878,16 @@ function OrganVisualizer({
       const v = results.voice
       if (!v) {
         return <UntestedOrganPrompt isToday={isToday} onStartTriage={onStartTriage} />
+      }
+      if (v.insufficient) {
+        return (
+          <InsufficientOrganPrompt
+            sel="voice"
+            reason={v.reason}
+            isToday={isToday}
+            onStartTriage={onStartTriage}
+          />
+        )
       }
       const stress = v.stress
       const jitter = v.jitter
@@ -972,6 +1127,16 @@ function OrganVisualizer({
       const a = results.amsler
       if (!a) {
         return <UntestedOrganPrompt isToday={isToday} onStartTriage={onStartTriage} />
+      }
+      if (a.insufficient) {
+        return (
+          <InsufficientOrganPrompt
+            sel="eye"
+            reason={a.reason}
+            isToday={isToday}
+            onStartTriage={onStartTriage}
+          />
+        )
       }
       const rightMarks = a.rightMarks ?? Math.ceil(a.marks / 2)
       const leftMarks = a.leftMarks ?? Math.floor(a.marks / 2)
@@ -1322,39 +1487,62 @@ function ImmuneDialVisualizer({
           <div className="ib-item">
             <div className="ib-row">
               <span className="ib-title">{t('immune.pvtFactor')}</span>
-              <strong className={`ib-val ${!results.pvt ? 'is-pending' : ''}`}>
-                {results.pvt ? t('immune.pts').replace('{val}', String(b.pvt)) : t('immune.pending')}
+              <strong className={`ib-val ${!results.pvt ? 'is-pending' : results.pvt.insufficient ? 'is-insufficient' : ''}`}>
+                {!results.pvt
+                  ? t('immune.pending')
+                  : results.pvt.insufficient
+                  ? (lang === 'en' ? 'Retest (Indeterminate)' : '需重測 (無法判讀)')
+                  : t('immune.pts').replace('{val}', String(b.pvt))}
               </strong>
             </div>
             <div className="ib-track">
-              <div className={`ib-fill ${barTone(b.pvt, 20)}`} style={{ width: `${(b.pvt / 20) * 100}%` }} />
+              <div className={`ib-fill ${results.pvt?.insufficient ? 'fill-insufficient' : barTone(b.pvt, 20)}`} style={{ width: results.pvt?.insufficient ? '100%' : `${(b.pvt / 20) * 100}%` }} />
             </div>
           </div>
 
           <div className="ib-item">
             <div className="ib-row">
               <span className="ib-title">{t('immune.rppgFactor')}</span>
-              <strong className={`ib-val ${!results.rppg ? 'is-pending' : ''}`}>
-                {results.rppg ? t('immune.pts').replace('{val}', String(b.rppg)) : t('immune.pending')}
+              <strong className={`ib-val ${!results.rppg ? 'is-pending' : results.rppg.insufficient ? 'is-insufficient' : ''}`}>
+                {!results.rppg
+                  ? t('immune.pending')
+                  : results.rppg.insufficient
+                  ? (lang === 'en' ? 'Retest (Indeterminate)' : '需重測 (無法判讀)')
+                  : t('immune.pts').replace('{val}', String(b.rppg))}
               </strong>
             </div>
             <div className="ib-track">
-              <div className={`ib-fill ${barTone(b.rppg, 20)}`} style={{ width: `${(b.rppg / 20) * 100}%` }} />
+              <div className={`ib-fill ${results.rppg?.insufficient ? 'fill-insufficient' : barTone(b.rppg, 20)}`} style={{ width: results.rppg?.insufficient ? '100%' : `${(b.rppg / 20) * 100}%` }} />
             </div>
           </div>
 
           <div className="ib-item">
             <div className="ib-row">
               <span className="ib-title">{t('immune.voiceFactor')}</span>
-              <strong className={`ib-val ${!results.voice ? 'is-pending' : ''}`}>
-                {results.voice ? t('immune.pts').replace('{val}', String(b.voice)) : t('immune.pending')}
+              <strong className={`ib-val ${!results.voice ? 'is-pending' : results.voice.insufficient ? 'is-insufficient' : ''}`}>
+                {!results.voice
+                  ? t('immune.pending')
+                  : results.voice.insufficient
+                  ? (lang === 'en' ? 'Retest (Indeterminate)' : '需重測 (無法判讀)')
+                  : t('immune.pts').replace('{val}', String(b.voice))}
               </strong>
             </div>
             <div className="ib-track">
-              <div className={`ib-fill ${barTone(b.voice, 20)}`} style={{ width: `${(b.voice / 20) * 100}%` }} />
+              <div className={`ib-fill ${results.voice?.insufficient ? 'fill-insufficient' : barTone(b.voice, 20)}`} style={{ width: results.voice?.insufficient ? '100%' : `${(b.voice / 20) * 100}%` }} />
             </div>
           </div>
         </div>
+
+        {b.hasInsufficient && (
+          <div className="immune-insufficient-notice">
+            <AlertTriangle size={13} className="iin-icon" />
+            <span>
+              {lang === 'en'
+                ? `⚠️ Contains ${b.insufficientCount} indeterminate biomarker(s). Complete retest to verify baseline.`
+                : `⚠️ 包含 ${b.insufficientCount} 項資料不足數據。無法排除隱性免疫衰退，請盡速補測。`}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )

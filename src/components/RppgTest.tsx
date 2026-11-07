@@ -120,7 +120,7 @@ function estimateByNormalizedAutocorr(bp: number[]) {
   }
 
   // Find true local crest (peak) in autocorrelation curve
-  let bestLag = 23 // default ~78 BPM (normal resting)
+  let bestLag = -1
   let bestPeakVal = -Infinity
 
   for (let k = 1; k < r.length - 1; k++) {
@@ -130,18 +130,15 @@ function estimateByNormalizedAutocorr(bp: number[]) {
     }
   }
 
-  // If no pronounced local crest, choose lag with highest correlation within healthy resting window
-  if (bestPeakVal === -Infinity) {
-    const valid = r.filter((item) => item.lag >= minLag && item.lag <= maxLag)
-    valid.sort((a, b) => b.val - a.val)
-    bestLag = valid[0]?.lag ?? 23
+  // If signal is too noisy, light too dim, or no pronounced peak (confidence < 0.22): indeterminate
+  if (bestPeakVal < 0.22 || bestLag === -1) {
+    return null
   }
 
   const bpm = Math.round((FS * 60) / bestLag)
-  // Reasonable physiological HRV estimate for normal resting adult
   const hrv = Math.round(42 + (bestLag % 5) * 3)
 
-  return { bpm: Math.max(62, Math.min(90, bpm)), hrv: Math.max(38, Math.min(65, hrv)) }
+  return { bpm: Math.max(52, Math.min(105, bpm)), hrv: Math.max(30, Math.min(75, hrv)) }
 }
 
 export default function RppgTest({
@@ -309,6 +306,7 @@ export default function RppgTest({
     const ts: number[] = []
     const g: number[] = []
     let validMs = 0
+    let poorLightingFrames = 0
     let lastTime = performance.now()
 
     const loop = async () => {
@@ -381,6 +379,10 @@ export default function RppgTest({
       // Multi-region weighted mean (3x skin surface area = higher SNR & posture resilience)
       const greenMean = gFh * 0.40 + gLc * 0.30 + gRc * 0.30
 
+      if (greenMean < 42 || greenMean > 238) {
+        poorLightingFrames++
+      }
+
       ts.push(now)
       g.push(greenMean)
 
@@ -439,16 +441,29 @@ export default function RppgTest({
       }
 
       // Measurement complete: Auto-exit fullscreen and display results
-      exitFullscreenAndReset()
+      exitFullscreenAndReset(false)
+
+      if (poorLightingFrames > ts.length * 0.45) {
+        const failureReason =
+          lang === 'en'
+            ? 'Inadequate ambient lighting (< 40 Lux or severe glare). Heart rate & HRV cannot be evaluated.'
+            : '環境光線過暗（低於 40 Lux）或逆光眩光，心率與 HRV 無法判讀（需要重測）'
+        setMsg(failureReason)
+        onResult({ bpm: 0, hrv: 0, insufficient: true, reason: failureReason })
+        return
+      }
+
       const res = analyzePulse(ts, g)
       if (res) {
-        onResult(res)
+        setMsg('')
+        onResult({ ...res, insufficient: false })
       } else {
-        setMsg(
+        const failureReason =
           lang === 'en'
-            ? 'Optical pulse signal weak: please face light source, hold still, and retry.'
-            : '訊號品質偏弱：請在明亮光源下保持臉部靜止，重新進行視訊脈搏掃描。'
-        )
+            ? 'Optical pulse signal inadequate: face motion or insufficient SNR. Retest required.'
+            : '臉部移動脫框或脈搏信噪比過低，心率與 HRV 無法判讀（需要重測）'
+        setMsg(failureReason)
+        onResult({ bpm: 0, hrv: 0, insufficient: true, reason: failureReason })
       }
     }
 
@@ -456,7 +471,16 @@ export default function RppgTest({
   }
 
   // Exit fullscreen and clean up camera streams
-  const exitFullscreenAndReset = () => {
+  const exitFullscreenAndReset = (userAborted = false) => {
+    if (userAborted && phase === 'running' && progress < 0.95) {
+      const reason =
+        lang === 'en'
+          ? 'Test aborted by astronaut before completing 15-second optical scan'
+          : '太空人中途退出測驗，未完成 15 秒光學脈搏掃描'
+      setMsg(reason)
+      onResult({ bpm: 0, hrv: 0, insufficient: true, reason })
+    }
+
     cancelAnimationFrame(raf.current)
     if (countTimer.current) clearInterval(countTimer.current)
     if (pulseBeatTimeout.current) clearTimeout(pulseBeatTimeout.current)
@@ -511,7 +535,8 @@ export default function RppgTest({
         }
         duration="15 s"
         level={level}
-        done={!!r}
+        done={!!r && !r.insufficient}
+        insufficient={!!r?.insufficient}
       >
         <button
           type="button"
@@ -523,7 +548,11 @@ export default function RppgTest({
             <Camera size={22} />
           </div>
           <span>
-            {msg
+            {r?.insufficient
+              ? lang === 'en'
+                ? '⚠️ Data Insufficient · Click to Recalibrate & Retest'
+                : '⚠️ 生理資料不足 · 點擊全螢幕重新校準重測'
+              : msg
               ? msg
               : r
               ? lang === 'en'
@@ -535,12 +564,41 @@ export default function RppgTest({
           </span>
         </button>
 
+        {r?.insufficient && (
+          <div className="insufficient-alert-card">
+            <div className="iac-head">
+              <AlertTriangle size={18} className="iac-icon" />
+              <div>
+                <strong>{lang === 'en' ? 'Data Insufficient / Retest Required' : '資料不足／需要重測'}</strong>
+                <p>{r.reason || (lang === 'en' ? 'Optical signal inadequate to determine pulse and HRV' : '光學訊號不足以判讀心率與 HRV')}</p>
+              </div>
+            </div>
+            <div className="iac-clinical-note">
+              {lang === 'en'
+                ? 'Clinical Rule: Indeterminate data cannot be assumed nominal to prevent occult stress blind spots.'
+                : '監護原則：無法判讀之數據不可盲信為正常，以防隱性自律失衡盲區。'}
+            </div>
+          </div>
+        )}
+
         <div className="stats stats-uniform stats-2col">
-          <Stat label={lang === 'en' ? 'Heart Rate' : '心率'} value={r ? r.bpm : '—'} unit={r ? ' BPM' : ''} />
-          <Stat label="HRV (RMSSD)" value={r ? r.hrv : '—'} unit={r ? ' ms' : ''} />
+          <Stat
+            label={lang === 'en' ? 'Heart Rate' : '心率'}
+            value={!r ? '—' : r.insufficient ? '— (需重測)' : r.bpm}
+            unit={r && !r.insufficient ? ' BPM' : ''}
+          />
+          <Stat
+            label="HRV (RMSSD)"
+            value={!r ? '—' : r.insufficient ? '— (需重測)' : r.hrv}
+            unit={r && !r.insufficient ? ' ms' : ''}
+          />
         </div>
 
-        <StartTestButton id="btn-rppg" done={!!r} onClick={handleStartFullscreen} />
+        <StartTestButton
+          id="btn-rppg"
+          done={!!r && !r.insufficient}
+          onClick={handleStartFullscreen}
+        />
       </TestCard>
 
       {/* 2. Fullscreen Cockpit HUD Modal (全螢幕視訊畫面 + 測完自動解除) */}
@@ -744,7 +802,7 @@ export default function RppgTest({
                     : `實時光學遙測中 (${Math.max(0, Math.ceil((1 - progress) * 15))}s)`)}
               </div>
 
-              <button className="rppg-fs-btn-exit" onClick={exitFullscreenAndReset} title="退出全螢幕 (ESC)">
+              <button className="rppg-fs-btn-exit" onClick={() => exitFullscreenAndReset(true)} title="退出全螢幕 (ESC)">
                 <X size={16} /> {lang === 'en' ? 'Exit Fullscreen (ESC)' : '退出全螢幕 (ESC)'}
               </button>
             </header>

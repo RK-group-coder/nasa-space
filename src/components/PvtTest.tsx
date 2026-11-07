@@ -173,15 +173,44 @@ export default function PvtTest({
     setIsFullscreen(false)
     setPhase('idle')
     if (finalRes) {
-      onResult(finalRes)
+      if (finalRes.falseStarts >= 4 && finalRes.rts.length <= 5) {
+        onResult({
+          ...finalRes,
+          insufficient: true,
+          reason:
+            lang === 'en'
+              ? `Excessive false starts (${finalRes.falseStarts} times). Reaction data lacks neuromotor basis.`
+              : `搶跑次數過多（${finalRes.falseStarts} 次），反應時間未具備有效神經測量依據`,
+        })
+      } else {
+        onResult({ ...finalRes, insufficient: false })
+      }
     }
   }
 
   // Cancel/Exit button handler
-  const exitFullscreenAndReset = () => {
+  const exitFullscreenAndReset = (userAborted = false) => {
     clearTimers()
     if (countTimer.current) clearInterval(countTimer.current)
+    const wasRunning = st.current.running || phase === 'wait' || phase === 'go' || phase === 'feedback'
+    const completedCount = st.current.rts.length
     st.current.running = false
+
+    if (userAborted && wasRunning && completedCount < TRIALS) {
+      const reason =
+        lang === 'en'
+          ? `Test aborted early (only completed ${completedCount}/${TRIALS} trials). Vigilance baseline insufficient.`
+          : `測驗未達最低有效次數（僅完成 ${completedCount}/${TRIALS} 次），無法判定反應警覺度`
+      onResult({
+        median: 0,
+        lapses: 0,
+        falseStarts: st.current.falseStarts,
+        rts: st.current.rts,
+        insufficient: true,
+        reason,
+      })
+    }
+
     if (document.fullscreenElement) {
       try {
         document.exitFullscreen?.().catch(() => {})
@@ -208,7 +237,8 @@ export default function PvtTest({
         }
         duration="≈ 45 s"
         level={level}
-        done={!!r}
+        done={!!r && !r.insufficient}
+        insufficient={!!r?.insufficient}
       >
         <button
           id="pvt-pad"
@@ -220,7 +250,11 @@ export default function PvtTest({
             <Zap size={23} />
           </div>
           <span>
-            {r
+            {r?.insufficient
+              ? lang === 'en'
+                ? '⚠️ PVT Data Insufficient · Click to Retest'
+                : '⚠️ 警覺數據不足 · 點擊全螢幕重新測試'
+              : r
               ? lang === 'en'
                 ? 'PVT Completed · Click to Retest Fullscreen'
                 : '警覺測試完成 · 點擊可全螢幕重新測試'
@@ -230,13 +264,40 @@ export default function PvtTest({
           </span>
         </button>
 
+        {r?.insufficient && (
+          <div className="insufficient-alert-card">
+            <div className="iac-head">
+              <AlertTriangle size={18} className="iac-icon" />
+              <div>
+                <strong>{lang === 'en' ? 'Data Insufficient / Retest Required' : '資料不足／需要重測'}</strong>
+                <p>{r.reason || (lang === 'en' ? 'Vigilance trials incomplete' : '精神運動反應次數不足，未達臨床判定標準')}</p>
+              </div>
+            </div>
+            <div className="iac-clinical-note">
+              {lang === 'en'
+                ? 'Clinical Rule: Psychomotor fatigue cannot be ruled out without completing all 5 trials.'
+                : '監護原則：未完成完整 5 次刺激反應，無法排除突發失神或微睡眠風險。'}
+            </div>
+          </div>
+        )}
+
         <div className="stats stats-uniform stats-3col">
-          <Stat label={lang === 'en' ? 'Median RT' : '中位反應'} value={r ? r.median : '—'} unit={r ? ' ms' : ''} />
-          <Stat label="Lapses" value={r ? r.lapses : '—'} />
-          <Stat label={lang === 'en' ? 'False Starts' : '搶跑'} value={r ? r.falseStarts : '—'} />
+          <Stat
+            label={lang === 'en' ? 'Median RT' : '中位反應'}
+            value={!r ? '—' : r.insufficient ? '— (需重測)' : r.median}
+            unit={r && !r.insufficient ? ' ms' : ''}
+          />
+          <Stat
+            label="Lapses"
+            value={!r ? '—' : r.insufficient ? '—' : r.lapses}
+          />
+          <Stat
+            label={lang === 'en' ? 'False Starts' : '搶跑'}
+            value={!r ? '—' : r.falseStarts}
+          />
         </div>
 
-        <StartTestButton id="btn-pvt" done={!!r} onClick={handleStartFullscreen} />
+        <StartTestButton id="btn-pvt" done={!!r && !r.insufficient} onClick={handleStartFullscreen} />
       </TestCard>
 
       {/* 2. Fullscreen Cockpit Modal (測試時全螢幕，測完自動解除) */}
@@ -271,7 +332,7 @@ export default function PvtTest({
                 {phase === 'feedback' && (lang === 'en' ? 'Reaction Feedback' : '反應反饋')}
               </div>
 
-              <button className="rppg-fs-btn-exit" onClick={exitFullscreenAndReset} title="退出全螢幕 (ESC)">
+              <button className="rppg-fs-btn-exit" onClick={() => exitFullscreenAndReset(true)} title="退出全螢幕 (ESC)">
                 <X size={16} /> {lang === 'en' ? 'Exit Fullscreen (ESC)' : '退出全螢幕 (ESC)'}
               </button>
             </header>

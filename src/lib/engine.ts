@@ -1,4 +1,4 @@
-import type { ActionItem, Env, Level, Results } from '../types/health'
+import type { ActionItem, Env, Level, StatusLevel, Results } from '../types/health'
 
 export const RADIATION_LIMIT_MSV = 600
 
@@ -8,12 +8,12 @@ export const worst = (...l: Level[]): Level =>
   l.includes('warning') ? 'warning' : l.includes('advisory') ? 'advisory' : 'nominal'
 
 export interface SystemStatus {
-  cardio: Level
-  cognition: Level
-  eye: Level
-  mind: Level
-  bone: Level
-  skin: Level
+  cardio: StatusLevel
+  cognition: StatusLevel
+  eye: StatusLevel
+  mind: StatusLevel
+  bone: StatusLevel
+  skin: StatusLevel
   immune: Level
   environment: Level
   radiation: Level
@@ -25,6 +25,9 @@ export interface ImmuneBreakdown {
   rppg: number
   voice: number
   total: number
+  insufficientCount: number
+  untestedCount: number
+  hasInsufficient: boolean
 }
 
 /**
@@ -36,7 +39,16 @@ export interface ImmuneBreakdown {
  */
 export function computeImmuneBreakdown(env: Env, r: Results): ImmuneBreakdown {
   const rad = Math.round(clamp(env.cumulative / RADIATION_LIMIT_MSV, 0, 1) * 40)
-  const pvt = r.pvt
+
+  const pvtInsufficient = Boolean(r.pvt?.insufficient)
+  const rppgInsufficient = Boolean(r.rppg?.insufficient)
+  const voiceInsufficient = Boolean(r.voice?.insufficient)
+  const amslerInsufficient = Boolean(r.amsler?.insufficient)
+
+  const insufficientCount = [pvtInsufficient, rppgInsufficient, voiceInsufficient, amslerInsufficient].filter(Boolean).length
+  const untestedCount = [!r.pvt, !r.rppg, !r.voice, !r.amsler].filter(Boolean).length
+
+  const pvt = r.pvt && !r.pvt.insufficient
     ? Math.round(
         clamp(
           clamp((r.pvt.median - 250) / 200, 0, 1) * 14 +
@@ -46,7 +58,8 @@ export function computeImmuneBreakdown(env: Env, r: Results): ImmuneBreakdown {
         ),
       )
     : 0
-  const rppg = r.rppg
+
+  const rppg = r.rppg && !r.rppg.insufficient
     ? Math.round(
         clamp(
           clamp((52 - r.rppg.hrv) / 30, 0, 1) * 13 + clamp((r.rppg.bpm - 72) / 36, 0, 1) * 7,
@@ -55,9 +68,10 @@ export function computeImmuneBreakdown(env: Env, r: Results): ImmuneBreakdown {
         ),
       )
     : 0
-  const voice = r.voice ? Math.round(clamp(r.voice.stress / 100, 0, 1) * 20) : 0
+
+  const voice = r.voice && !r.voice.insufficient ? Math.round(clamp(r.voice.stress / 100, 0, 1) * 20) : 0
   const total = Math.round(clamp(rad + pvt + rppg + voice, 0, 100))
-  return { rad, pvt, rppg, voice, total }
+  return { rad, pvt, rppg, voice, total, insufficientCount, untestedCount, hasInsufficient: insufficientCount > 0 }
 }
 
 /** Immune Vulnerability Index 0-100 (higher = worse). */
@@ -88,14 +102,14 @@ export function evaluateImmuneLevel(env: Env, r: Results): Level {
   const b = computeImmuneBreakdown(env, r)
   const idx = b.total
 
-  const pvtWarn = Boolean(r.pvt && (r.pvt.median > 400 || r.pvt.lapses >= 2 || b.pvt >= 13))
-  const pvtAdv = Boolean(r.pvt && (r.pvt.median > 300 || r.pvt.lapses >= 1 || b.pvt >= 8))
+  const pvtWarn = Boolean(r.pvt && !r.pvt.insufficient && (r.pvt.median > 400 || r.pvt.lapses >= 2 || b.pvt >= 13))
+  const pvtAdv = Boolean(r.pvt && !r.pvt.insufficient && (r.pvt.median > 300 || r.pvt.lapses >= 1 || b.pvt >= 8))
 
-  const rppgWarn = Boolean(r.rppg && (r.rppg.bpm > 100 || r.rppg.hrv < 30 || b.rppg >= 13))
-  const rppgAdv = Boolean(r.rppg && (r.rppg.bpm > 90 || r.rppg.hrv < 40 || b.rppg >= 8))
+  const rppgWarn = Boolean(r.rppg && !r.rppg.insufficient && (r.rppg.bpm > 100 || r.rppg.hrv < 30 || b.rppg >= 13))
+  const rppgAdv = Boolean(r.rppg && !r.rppg.insufficient && (r.rppg.bpm > 90 || r.rppg.hrv < 40 || b.rppg >= 8))
 
-  const voiceWarn = Boolean(r.voice && (r.voice.stress >= 65 || b.voice >= 13))
-  const voiceAdv = Boolean(r.voice && (r.voice.stress >= 40 || b.voice >= 8))
+  const voiceWarn = Boolean(r.voice && !r.voice.insufficient && (r.voice.stress >= 65 || b.voice >= 13))
+  const voiceAdv = Boolean(r.voice && !r.voice.insufficient && (r.voice.stress >= 40 || b.voice >= 8))
 
   const radWarn = env.storm || env.cumulative > RADIATION_LIMIT_MSV * 0.8 || b.rad >= 28
   const radAdv = env.cumulative > 120 || b.rad >= 8
@@ -119,8 +133,10 @@ export function evaluateImmuneLevel(env: Env, r: Results): Level {
   return 'nominal'
 }
 
-export function evaluateAmsler(a?: Results['amsler']): Level {
-  if (!a || a.marks === 0) return 'nominal'
+export function evaluateAmsler(a?: Results['amsler']): StatusLevel {
+  if (!a) return 'untested'
+  if (a.insufficient) return 'insufficient'
+  if (a.marks === 0) return 'nominal'
   if (a.centralMarks !== undefined) {
     if (a.centralMarks >= 1) return 'warning'
     const par = a.paracentralMarks ?? 0
@@ -132,18 +148,28 @@ export function evaluateAmsler(a?: Results['amsler']): Level {
 }
 
 export function evaluate(env: Env, r: Results): SystemStatus {
-  const cardio: Level = !r.rppg ? 'nominal'
+  const cardio: StatusLevel = !r.rppg ? 'untested'
+    : r.rppg.insufficient ? 'insufficient'
     : r.rppg.bpm > 100 || r.rppg.hrv < 30 ? 'warning'
     : r.rppg.bpm > 90 || r.rppg.hrv < 40 ? 'advisory' : 'nominal'
-  const cognition: Level = !r.pvt ? 'nominal'
+
+  const cognition: StatusLevel = !r.pvt ? 'untested'
+    : r.pvt.insufficient ? 'insufficient'
     : r.pvt.median > 400 || r.pvt.lapses >= 2 ? 'warning'
     : r.pvt.median > 300 || r.pvt.lapses >= 1 ? 'advisory' : 'nominal'
-  const eye: Level = evaluateAmsler(r.amsler)
-  const mind: Level = !r.voice ? 'nominal' : r.voice.stress >= 65 ? 'warning' : r.voice.stress >= 40 ? 'advisory' : 'nominal'
-  const bone: Level = r.bone
+
+  const eye: StatusLevel = evaluateAmsler(r.amsler)
+
+  const mind: StatusLevel = !r.voice ? 'untested'
+    : r.voice.insufficient ? 'insufficient'
+    : r.voice.stress >= 65 ? 'warning'
+    : r.voice.stress >= 40 ? 'advisory' : 'nominal'
+
+  const bone: StatusLevel = r.bone
     ? (r.bone.tScore < -1.0 || r.bone.bmdLossPct > 3.0 ? 'warning' : r.bone.bmdLossPct > 1.5 ? 'advisory' : 'nominal')
     : r.squat ? (r.squat.dls < 0.3 ? 'warning' : r.squat.dls < 0.5 ? 'advisory' : 'nominal') : 'nominal'
-  const skin: Level = !r.skin ? 'nominal' : r.skin.rednessPct > 8 ? 'warning' : r.skin.rednessPct > 3 ? 'advisory' : 'nominal'
+
+  const skin: StatusLevel = !r.skin ? 'nominal' : r.skin.rednessPct > 8 ? 'warning' : r.skin.rednessPct > 3 ? 'advisory' : 'nominal'
   const environment: Level = env.co2 > 5 ? 'warning' : env.co2 > 3.5 ? 'advisory' : 'nominal'
   const radiation: Level = env.storm || env.cumulative > RADIATION_LIMIT_MSV * 0.8 ? 'warning'
     : env.cumulative > RADIATION_LIMIT_MSV * 0.25 || env.doseRate > 30 ? 'advisory' : 'nominal'
@@ -155,15 +181,38 @@ export function evaluate(env: Env, r: Results): SystemStatus {
 export function crossDiagnostics(env: Env, r: Results): { level: Level; text: string }[] {
   const s = evaluate(env, r)
   const out: { level: Level; text: string }[] = []
-  if (s.cognition !== 'nominal' && s.environment !== 'nominal')
+
+  const hasInsufficient =
+    s.cognition === 'insufficient' ||
+    s.cardio === 'insufficient' ||
+    s.eye === 'insufficient' ||
+    s.mind === 'insufficient'
+
+  if (hasInsufficient) {
+    out.push({
+      level: 'advisory',
+      text: '注意：今日晨檢包含「資料不足／需重測」項目。太空健康管理首要原則在於「不可將無效或受干擾數據誤判為健全」，請及時完成補測以消除多系統監護盲區。',
+    })
+  }
+
+  const pvtElevated = s.cognition === 'warning' || s.cognition === 'advisory'
+  const envElevated = s.environment === 'warning' || s.environment === 'advisory'
+
+  if (pvtElevated && envElevated)
     out.push({ level: 'warning', text: `警告：PVT 反應遲鈍且居住艙 CO₂ 偏高（${env.co2.toFixed(1)} mmHg），可能是通風不良造成嗜睡與頭痛，請先檢查循環風扇，而非單純歸因於睡眠不足。` })
-  else if (s.cognition !== 'nominal')
-    out.push({ level: s.cognition, text: '警覺度下降且艙內環境正常，疑似睡眠剝奪或晝夜節律失調，建議安排補眠。' })
+  else if (pvtElevated)
+    out.push({ level: s.cognition as Level, text: '警覺度下降且艙內環境正常，疑似睡眠剝奪或晝夜節律失調，建議安排補眠。' })
   if (env.storm)
     out.push({ level: 'warning', text: '太陽粒子事件進行中：劑量率飆升，建議移至輻射屏蔽區（風暴避難所）並暫停艙外活動。' })
-  if (s.cardio !== 'nominal' && s.mind !== 'nominal')
+  if (
+    (s.cardio === 'warning' || s.cardio === 'advisory') &&
+    (s.mind === 'warning' || s.mind === 'advisory')
+  )
     out.push({ level: 'advisory', text: '心率變異度下降同時語音壓力偏高，顯示交感神經持續過度活化，建議安排放鬆與社交通話。' })
-  if (s.eye !== 'nominal' && s.cardio !== 'nominal')
+  if (
+    (s.eye === 'warning' || s.eye === 'advisory') &&
+    (s.cardio === 'warning' || s.cardio === 'advisory')
+  )
     out.push({ level: 'warning', text: '視野失真合併心血管負荷異常，疑似頭向體液轉移加劇（SANS 風險）。' })
   if (s.immune === 'warning') {
     const b = computeImmuneBreakdown(env, r)
@@ -174,7 +223,7 @@ export function crossDiagnostics(env: Env, r: Results): { level: Level; text: st
         ? `免疫脆弱度警報（聯鎖升級啟動）：檢測到單項重大致病因子異常（${s.cognition === 'warning' ? 'PVT 精神運動耗竭' : s.cardio === 'warning' ? '心血管自律失衡' : '高心理壓力'}）疊加深空累積輻射，神經-內分泌-免疫軸受抑，不可因其他項目未測而忽視，已啟動預防性感染警覺。`
         : `免疫脆弱度重度超標（總指數 ${b.total}/100）：多項生理防線同時受抑，細胞免疫顯著下降，嚴防潛伏病毒（EBV / VZV）重啟感染。`,
     })
-  } else if (s.skin !== 'nominal' && s.immune !== 'nominal')
+  } else if (s.skin !== 'nominal' && s.skin !== 'untested' && s.skin !== 'insufficient' && s.immune !== 'nominal')
     out.push({ level: 'advisory', text: '皮膚紅斑合併免疫脆弱度偏高，需留意潛伏病毒（EBV / VZV）重啟，建議隔離觀察。' })
   if (!out.length) out.push({ level: 'nominal', text: '各系統交叉比對無顯著異常，維持目前任務節奏。' })
   return out
@@ -184,8 +233,49 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
   const s = evaluate(env, r)
   const a: ActionItem[] = []
 
-  // 01. NASA-PVT 精神運動警覺異常處置
-  if (r.pvt && s.cognition !== 'nominal') {
+  // 00. 優先排入「資料不足／需重測」之數據補測處置（深空健康管理原則）
+  if (r.pvt?.insufficient) {
+    a.push({
+      id: 'pvt-retest',
+      category: 'rest',
+      level: 'advisory',
+      title: '【數據補測】排除干擾，重新完成 5 次 NASA-PVT 精神運動警覺測試',
+      detail: `認知疲勞遙測資料不足（原因：${r.pvt.reason || '測驗未完成或搶跑干擾'}）。數據缺失無法排除微重力急性認知失能風險，請在無外部通訊干擾下專注完成 5 次刺激反應。`,
+    })
+  }
+
+  if (r.amsler?.insufficient) {
+    a.push({
+      id: 'amsler-retest',
+      category: 'exercise',
+      level: 'advisory',
+      title: '【數據補測】重新執行雙眼 Amsler 視野失真檢測',
+      detail: `SANS 視網膜視野資料不足（原因：${r.amsler.reason || '雙眼凝視未滿或單眼中斷'}）。無法判斷頭向體液轉移是否侵犯中心視軸，請保持 30–33 cm 距離，依序完成雙眼中心紅點凝視掃描。`,
+    })
+  }
+
+  if (r.rppg?.insufficient) {
+    a.push({
+      id: 'rppg-retest',
+      category: 'environment',
+      level: 'advisory',
+      title: '【數據補測】校準照明光源，重新執行 rPPG 心血管脈搏掃描',
+      detail: `光學心率與 HRV 資料不足（原因：${r.rppg.reason || '環境光線不足或臉部脫框'}）。健康監護原則：無法判讀之數據不可盲信為健全，請將面部光源調至 300+ Lux、臉部正面對準鏡頭並保持靜止 15 秒重新掃描。`,
+    })
+  }
+
+  if (r.voice?.insufficient) {
+    a.push({
+      id: 'voice-retest',
+      category: 'comms',
+      level: 'advisory',
+      title: '【數據補測】確認麥克風收音，重新完成語音壓力朗讀',
+      detail: `聲學特徵資料不足（原因：${r.voice.reason || '有效發音幀數過低或音量過小'}）。請靠近麥克風並確認環境靜音，以自然聲量朗讀標準測試短文以完成自主評估。`,
+    })
+  }
+
+  // 01. NASA-PVT 精神運動警覺異常處置 (僅在數據有效時觸發)
+  if (r.pvt && !r.pvt.insufficient && (s.cognition === 'warning' || s.cognition === 'advisory')) {
     const co2Hint = s.environment !== 'nominal' ? `，並同步檢查艙內通風（CO₂ ${env.co2.toFixed(1)} mmHg）` : ''
     if (s.cognition === 'warning') {
       a.push({
@@ -206,8 +296,8 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
     }
   }
 
-  // 02. Amsler 視覺失真 / SANS 異常處置
-  if (r.amsler && s.eye !== 'nominal') {
+  // 02. Amsler 視覺失真 / SANS 異常處置 (僅在數據有效時觸發)
+  if (r.amsler && !r.amsler.insufficient && (s.eye === 'warning' || s.eye === 'advisory')) {
     const rCnt = r.amsler.rightMarks ?? 0
     const lCnt = r.amsler.leftMarks ?? 0
     if (s.eye === 'warning') {
@@ -229,8 +319,8 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
     }
   }
 
-  // 03. rPPG 心血管與自律神經異常處置
-  if (r.rppg && s.cardio !== 'nominal') {
+  // 03. rPPG 心血管與自律神經異常處置 (僅在數據有效時觸發)
+  if (r.rppg && !r.rppg.insufficient && (s.cardio === 'warning' || s.cardio === 'advisory')) {
     if (s.cardio === 'warning') {
       a.push({
         id: 'rppg',
@@ -250,8 +340,8 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
     }
   }
 
-  // 04. 聲學語音壓力異常處置
-  if (r.voice && s.mind !== 'nominal') {
+  // 04. 聲學語音壓力異常處置 (僅在數據有效時觸發)
+  if (r.voice && !r.voice.insufficient && (s.mind === 'warning' || s.mind === 'advisory')) {
     if (s.mind === 'warning') {
       a.push({
         id: 'voice',
