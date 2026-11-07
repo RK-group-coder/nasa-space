@@ -95,6 +95,7 @@ export default function App() {
     return Boolean(r?.insufficient)
   }).length
   const allDone = validDone === coreKeys.length
+  const done = validDone
 
   const handleSelectDate = (d: Date) => {
     setSelectedDate(d)

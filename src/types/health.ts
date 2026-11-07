@@ -78,5 +78,5 @@ export interface ActionItem {
   category: 'exercise' | 'nutrition' | 'environment' | 'rest' | 'comms'
   title: string
   detail: string
-  level: Level
+  level: Level | StatusLevel
 }

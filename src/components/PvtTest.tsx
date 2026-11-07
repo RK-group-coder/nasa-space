@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CheckCircle2, X, Maximize2, Zap, Activity } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, X, Maximize2, Zap, Activity } from 'lucide-react'
 import { Stat, StartTestButton, TestCard, median } from './TestCard'
 import { evaluate } from '../lib/engine'
 import type { Env, Results } from '../types/health'
@@ -398,7 +398,7 @@ export default function PvtTest({
                       <CheckCircle2 size={16} />{' '}
                       {lang === 'en' ? 'Confirm, Start 3s Countdown' : '確認，開始 3 秒倒數'}
                     </button>
-                    <button className="btn-fs-cancel" onClick={exitFullscreenAndReset}>
+                    <button className="btn-fs-cancel" onClick={() => exitFullscreenAndReset(true)}>
                       {lang === 'en' ? 'Cancel' : '取消'}
                     </button>
                   </div>

@@ -788,7 +788,7 @@ export default function VoiceTest({
                         ? `Confirm (${lang === 'zh' ? 'Chinese Passage' : 'English Passage'}), Start in 3s`
                         : `確認（${lang === 'zh' ? '中文短文' : 'English Passage'}），3 秒後開始`}
                     </button>
-                    <button className="btn-fs-cancel" onClick={exitFullscreenAndReset}>
+                    <button className="btn-fs-cancel" onClick={() => exitFullscreenAndReset(true)}>
                       {appLang === 'en' ? 'Cancel' : '取消'}
                     </button>
                   </div>

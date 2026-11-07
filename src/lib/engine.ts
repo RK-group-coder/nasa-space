@@ -362,7 +362,7 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
   }
 
   // Optional legacy/preset results if explicitly populated and abnormal
-  if (r.bone && s.bone !== 'nominal') {
+  if (r.bone && (s.bone === 'warning' || s.bone === 'advisory')) {
     a.push({
       id: 'bone',
       category: 'exercise',
@@ -370,7 +370,7 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
       title: '強化 ARED 骨骼力學負重處方',
       detail: `骨密度流失 ${r.bone.bmdLossPct}%：追加下肢抗阻訓練 +10% 負重，並補充維生素 D3／鈣片。`,
     })
-  } else if (r.squat && s.bone !== 'nominal') {
+  } else if (r.squat && (s.bone === 'warning' || s.bone === 'advisory')) {
     a.push({
       id: 'bone',
       category: 'exercise',
@@ -379,7 +379,7 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
       detail: `骨骼刺激 DLS ${r.squat.dls.toFixed(2)} 未達標：深蹲追加 2 組、負重 +5 kg。`,
     })
   }
-  if (r.skin && s.skin !== 'nominal') {
+  if (r.skin && (s.skin === 'warning' || s.skin === 'advisory')) {
     a.push({
       id: 'skin',
       category: 'nutrition',

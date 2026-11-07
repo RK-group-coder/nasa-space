@@ -864,7 +864,7 @@ export default function RppgTest({
                       <CheckCircle2 size={16} />{' '}
                       {lang === 'en' ? 'Confirm, Turn on Camera & Start Countdown' : '確認，開啟相機並開始倒數'}
                     </button>
-                    <button className="btn-fs-cancel" onClick={exitFullscreenAndReset}>
+                    <button className="btn-fs-cancel" onClick={() => exitFullscreenAndReset(true)}>
                       {lang === 'en' ? 'Cancel' : '取消'}
                     </button>
                   </div>

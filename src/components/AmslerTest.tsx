@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CheckCircle2, Clock, Eye, Maximize2, RotateCcw, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Clock, Eye, Maximize2, RotateCcw, X } from 'lucide-react'
 import { Stat, StartTestButton, TestCard } from './TestCard'
 import { evaluate } from '../lib/engine'
 import type { Env, Results } from '../types/health'
@@ -498,7 +498,7 @@ export default function AmslerTest({
                         ? `I have covered left eye, start right eye ${FIXATION_SECONDS}s test`
                         : `我已遮住左眼，開始右眼 ${FIXATION_SECONDS} 秒測驗`}
                     </button>
-                    <button className="btn-fs-cancel" onClick={exitFullscreenAndReset}>
+                    <button className="btn-fs-cancel" onClick={() => exitFullscreenAndReset(true)}>
                       {lang === 'en' ? 'Cancel' : '取消'}
                     </button>
                   </div>
@@ -588,7 +588,7 @@ export default function AmslerTest({
                         ? `I have covered right eye, start left eye ${FIXATION_SECONDS}s test`
                         : `我已遮住右眼，開始左眼 ${FIXATION_SECONDS} 秒測驗`}
                     </button>
-                    <button className="btn-fs-cancel" onClick={exitFullscreenAndReset}>
+                    <button className="btn-fs-cancel" onClick={() => exitFullscreenAndReset(true)}>
                       {lang === 'en' ? 'Cancel' : '取消'}
                     </button>
                   </div>
