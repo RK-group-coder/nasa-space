@@ -283,7 +283,7 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
         category: 'rest',
         level: 'warning',
         title: '安排 90 分鐘預防性補眠（Power Nap）',
-        detail: `警覺度顯著下滑（中位反應 ${r.pvt.median} ms · 失神 ${r.pvt.lapses} 次）：暫停艙外與高風險精密操作權限，進行完整睡眠週期補眠${co2Hint}，醒後重測 PVT。`,
+        detail: `警覺度顯著下滑（中位反應 ${r.pvt.median} ms · 失神 ${r.pvt.lapses} 次）：暫停艙外與高風險精密操作權限，進行完整睡眠週期補眠${co2Hint}。依 NASA SOP：先排除環境干擾並安排複測，若持續異常或自覺嚴重疲勞請通報地面航醫。`,
       })
     } else {
       a.push({
@@ -306,7 +306,7 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
         category: 'exercise',
         level: 'warning',
         title: '下半身負壓（LBNP）40 分鐘 + 視網膜追蹤',
-        detail: `檢出中心視區或顯著視覺失真（右眼 ${rCnt} 格 / 左眼 ${lCnt} 格）：立即以 LBNP 負壓將體液拉回下肢以減緩頭向體液轉移與視神經鞘壓力，減少高鈉飲食並通報航醫。`,
+        detail: `檢出中心視區或顯著視覺失真（右眼 ${rCnt} 格 / 左眼 ${lCnt} 格）：以 LBNP 負壓引流減緩視神經鞘水腫。依 SOP：先眨眼休息確認凝視無誤後重測，若持續視野變形或視力模糊請通報航醫。`,
       })
     } else {
       a.push({
@@ -327,7 +327,7 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
         category: 'rest',
         level: 'warning',
         title: '暫緩高強度運動 · 共振深呼吸調節',
-        detail: `心血管負荷過高（心率 ${r.rppg.bpm} BPM / HRV ${r.rppg.hrv} ms）：暫停高強度阻力訓練，改做 10 分鐘慢速腹式深呼吸（6 次/分）並補充水分，下午重新量測。`,
+        detail: `心血管負荷過高（心率 ${r.rppg.bpm} BPM / HRV ${r.rppg.hrv} ms）：暫停高強度阻力訓練，改做 10 分鐘慢速腹式深呼吸。請排除面部強烈陰影後重測，若持續心悸或心率偏高請通報醫官。`,
       })
     } else {
       a.push({
@@ -348,7 +348,7 @@ export function buildActions(env: Env, r: Results): ActionItem[] {
         category: 'environment',
         level: 'warning',
         title: '2700K 暖光減壓環境 + 心理支持通訊',
-        detail: `語音壓力指數偏高（${r.voice.stress}/100 · 基頻微顫 ${r.voice.jitter}%）：生活艙切換低色溫暖光，減免今日非關鍵排程，安排 20 分鐘 VR 地球漫遊與家人通話。`,
+        detail: `語音壓力指數偏高（${r.voice.stress}/100 · 基頻微顫 ${r.voice.jitter}%）：生活艙切換低色溫暖光，減免非關鍵排程；請先溫水潤喉並確認環境無噪音後複測，持續緊繃再依任務程序尋求醫療諮詢。`,
       })
     } else {
       a.push({

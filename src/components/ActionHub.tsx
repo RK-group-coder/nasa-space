@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { buildActions } from '../lib/engine'
 import { Badge } from './TestCard'
+import AbnormalSopProtocol from './AbnormalSopProtocol'
 import type { ActionItem, Env, Results } from '../types/health'
 import { useI18n } from '../lib/i18nContext'
 
@@ -122,20 +123,27 @@ export default function ActionHub({
       </div>
 
       {actions.length > 0 ? (
-        <ul>
-          {actions.map((a, i) => {
-            const key = a.id || `${a.category}-${i}`
-            return (
-              <ActionCardItem
-                key={key}
-                action={a}
-                executed={Boolean(executed[key])}
-                readOnly={readOnly}
-                onToggle={(next) => onToggleExecuted?.(key, next)}
-              />
-            )
-          })}
-        </ul>
+        <>
+          <ul>
+            {actions.map((a, i) => {
+              const key = a.id || `${a.category}-${i}`
+              return (
+                <ActionCardItem
+                  key={key}
+                  action={a}
+                  executed={Boolean(executed[key])}
+                  readOnly={readOnly}
+                  onToggle={(next) => onToggleExecuted?.(key, next)}
+                />
+              )
+            })}
+          </ul>
+          <AbnormalSopProtocol
+            env={env}
+            results={results}
+            isToday={!readOnly}
+          />
+        </>
       ) : testedCount > 0 ? (
         <div className="act-empty is-all-clear">
           <span className="act-empty-icon"><CheckCircle2 size={20} /></span>

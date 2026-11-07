@@ -9,6 +9,7 @@ import {
   BarChart3,
   Lock,
   AlertTriangle,
+  Stethoscope,
 } from 'lucide-react'
 import { CRITERIA, CRITERIA_ORDER, getCriteria, type Criterion } from '../data/criteriaData'
 import { evaluate, immuneIndex } from '../lib/engine'
@@ -340,6 +341,26 @@ export function CriteriaModal({
             </h3>
             <div className="significance-box">
               <p>{item.significance}</p>
+            </div>
+            <div className="criteria-sop-boundary-note" style={{
+              marginTop: '12px',
+              padding: '12px 14px',
+              borderRadius: '10px',
+              background: 'rgba(0, 224, 200, 0.05)',
+              border: '1px solid rgba(0, 224, 200, 0.28)',
+              fontSize: '12px',
+              lineHeight: '1.6',
+              color: '#d1dde8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00ffd0', fontWeight: '700', marginBottom: '6px' }}>
+                <Stethoscope size={15} />
+                <span>{lang === 'en' ? 'NASA HRP Clinical Escalation Protocol & Diagnostic Boundary' : 'NASA HRP 臨床監護界線與異常處置 SOP 標準程序'}</span>
+              </div>
+              <p style={{ margin: 0 }}>
+                {lang === 'en'
+                  ? 'Operational Precaution: Automated daily biomarkers (rPPG, PVT, Amsler, Voice) are designed for microgravity risk screening, not formal disease diagnosis. Crew must execute the 4-step SOP: 1) Verify test illumination/acoustics/posture, 2) Retest after 2 min rest to rule out artifacts, 3) Log any subjective discomfort symptoms in the Action Hub, and 4) If abnormality persists across retests, escalate to formal flight surgeon telemedicine consultation.'
+                  : '航醫處置原則：自動化晨檢感測（rPPG、PVT、Amsler、語音）屬於微重力自主風險快篩，非最終臨床定性診斷。檢測異常時務必遵循 4 步驟標準 SOP：① 檢核測試環境（光線、距離、噪音、坐姿），② 休息 2 分鐘深呼吸後重測以排除偽陽性，③ 於自主處置區記錄主觀自覺不適症狀，④ 若跨次持續異常或伴隨臨床症狀，再依深空任務通訊程序尋求地面航醫會診評估。'}
+              </p>
             </div>
           </section>
         </div>

@@ -632,6 +632,24 @@ export default function VoiceTest({
           </div>
         )}
 
+        {r && !r.insufficient && (level === 'warning' || level === 'advisory') && (
+          <div className={`test-card-anomaly-callout ${level === 'warning' ? 'is-warning' : ''}`}>
+            <AlertTriangle size={15} className="tcac-icon" />
+            <div className="tcac-text">
+              <strong>
+                {appLang === 'en'
+                  ? '【Operational Reminder】Voice Tension · Not Psychological Diagnosis'
+                  : '【航醫監護提醒】語音交感張力偏高 · 非心理病理診斷'}
+              </strong>
+              <span>
+                {appLang === 'en'
+                  ? 'Vocal frequency perturbations reflect acute vocal cord fatigue or cabin acoustics. Speak naturally, rest 2 min to retest, and record symptoms.'
+                  : '聲帶基頻微顫常受喉部乾燥、艙內通風噪聲或暫時性緊繃影響。請溫水潤喉、放鬆 2 分鐘後重新測驗；若持續偏離，請記錄自覺症狀並通報醫官。'}
+              </span>
+            </div>
+          </div>
+        )}
+
         <StartTestButton id="btn-voice" done={!!r && !r.insufficient} onClick={handleStartFullscreen} />
       </TestCard>
 

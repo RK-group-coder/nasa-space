@@ -363,6 +363,24 @@ export default function AmslerTest({
           />
         </div>
 
+        {r && !r.insufficient && (level === 'warning' || level === 'advisory') && (
+          <div className={`test-card-anomaly-callout ${level === 'warning' ? 'is-warning' : ''}`}>
+            <AlertTriangle size={15} className="tcac-icon" />
+            <div className="tcac-text">
+              <strong>
+                {lang === 'en'
+                  ? '【Operational Reminder】Grid Metamorphopsia · Not Clinical SANS Diagnosis'
+                  : '【航醫監護提醒】視野方格變形 · 非臨床 SANS 定性診斷'}
+              </strong>
+              <span>
+                {lang === 'en'
+                  ? 'Single-test grid distortion can stem from tear film dryness or fixation shift. Blink, maintain 30–33 cm distance to retest, and log vision symptoms in Action Hub.'
+                  : '單次方格變形可能源於淚膜乾燥、眨眼疲勞或凝視偏角。請眨眼休息、維持 30–33 公分重測；若持續異常，請記錄自覺不適並通報醫官。'}
+              </span>
+            </div>
+          </div>
+        )}
+
         <StartTestButton id="btn-amsler" done={!!r && !r.insufficient} onClick={handleStartFullscreen} />
       </TestCard>
 

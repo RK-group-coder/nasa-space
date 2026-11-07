@@ -297,6 +297,24 @@ export default function PvtTest({
           />
         </div>
 
+        {r && !r.insufficient && (level === 'warning' || level === 'advisory') && (
+          <div className={`test-card-anomaly-callout ${level === 'warning' ? 'is-warning' : ''}`}>
+            <AlertTriangle size={15} className="tcac-icon" />
+            <div className="tcac-text">
+              <strong>
+                {lang === 'en'
+                  ? '【Operational Reminder】Reaction Deviation · Not Clinical Diagnosis'
+                  : '【航醫監護提醒】反應數據偏離 · 非臨床疾病診斷'}
+              </strong>
+              <span>
+                {lang === 'en'
+                  ? 'Single-test fatigue does not equal neurological illness. Check cabin ventilation, rest 2 min to retest, and record symptoms in Action Hub.'
+                  : '單次警覺度偏離不等於神經病理診斷。請先確認艙內通風與光線，深呼吸休息 2 分鐘後重測；若持續偏離，請記錄自覺症狀並通報醫官。'}
+              </span>
+            </div>
+          </div>
+        )}
+
         <StartTestButton id="btn-pvt" done={!!r && !r.insufficient} onClick={handleStartFullscreen} />
       </TestCard>
 

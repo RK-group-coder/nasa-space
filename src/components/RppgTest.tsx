@@ -594,6 +594,24 @@ export default function RppgTest({
           />
         </div>
 
+        {r && !r.insufficient && (level === 'warning' || level === 'advisory') && (
+          <div className={`test-card-anomaly-callout ${level === 'warning' ? 'is-warning' : ''}`}>
+            <AlertTriangle size={15} className="tcac-icon" />
+            <div className="tcac-text">
+              <strong>
+                {lang === 'en'
+                  ? '【Operational Reminder】Cardio Fluctuation · Not Cardiac Diagnosis'
+                  : '【航醫監護提醒】自律神經心率浮動 · 非心臟病理診斷'}
+              </strong>
+              <span>
+                {lang === 'en'
+                  ? 'Optical pulse deviations can arise from lighting shifts, respiration pacing, or posture. Sit quietly, breathe deeply 2 min to retest, and record symptoms.'
+                  : '光學脈搏偏離常受環境光暗、短暫呼吸急促或頭部微晃影響。請放鬆端坐深呼吸 2 分鐘後重新測驗；若持續偏離，請記錄自覺症狀並通報醫官。'}
+              </span>
+            </div>
+          </div>
+        )}
+
         <StartTestButton
           id="btn-rppg"
           done={!!r && !r.insufficient}

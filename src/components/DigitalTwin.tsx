@@ -9,6 +9,7 @@ import {
 } from '../lib/engine'
 import { Badge } from './TestCard'
 import { ActionCardItem } from './ActionHub'
+import AbnormalSopProtocol from './AbnormalSopProtocol'
 import {
   ClipboardList,
   Activity,
@@ -340,23 +341,32 @@ export default function DigitalTwin({
               </div>
 
               {actions.length > 0 ? (
-                <ul className="act-mini-list">
-                  {actions.map((a: ActionItem, i: number) => {
-                    const key = a.id || `${a.category}-${i}`
-                    return (
-                      <ActionCardItem
-                        key={key}
-                        action={a}
-                        compactIcon
-                        readOnly={!isToday}
-                        executed={Boolean(executed[key])}
-                        onToggle={(next) => {
-                          if (isToday) onToggleExecuted?.(key, next)
-                        }}
-                      />
-                    )
-                  })}
-                </ul>
+                <>
+                  <ul className="act-mini-list">
+                    {actions.map((a: ActionItem, i: number) => {
+                      const key = a.id || `${a.category}-${i}`
+                      return (
+                        <ActionCardItem
+                          key={key}
+                          action={a}
+                          compactIcon
+                          readOnly={!isToday}
+                          executed={Boolean(executed[key])}
+                          onToggle={(next) => {
+                            if (isToday) onToggleExecuted?.(key, next)
+                          }}
+                        />
+                      )
+                    })}
+                  </ul>
+                  <AbnormalSopProtocol
+                    env={env}
+                    results={effectiveResults}
+                    date={selectedDate}
+                    isToday={isToday}
+                    compact
+                  />
+                </>
               ) : testedCount > 0 ? (
                 <div className="act-empty is-all-clear">
                   <span className="act-empty-icon"><CheckCircle2 size={20} /></span>
