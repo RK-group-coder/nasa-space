@@ -10,6 +10,7 @@ import {
   Lock,
   AlertTriangle,
   Stethoscope,
+  BookOpen,
 } from 'lucide-react'
 import { CRITERIA, CRITERIA_ORDER, getCriteria, type Criterion } from '../data/criteriaData'
 import { evaluate, immuneIndex } from '../lib/engine'
@@ -288,7 +289,48 @@ export function CriteriaModal({
             </div>
           </section>
 
-          {/* Section 2: Standards & Thresholds */}
+          {/* Section 2: Measurement Principle & Clinical Judgment Logic (檢測原理與判讀邏輯機制) */}
+          {item.principle && (
+            <section className="criteria-section criteria-principle-section">
+              <h3 className="section-title">
+                <BookOpen size={15} /> {lang === 'en' ? 'Measurement Principle & Clinical Judgment Logic' : '檢測原理與判讀邏輯機制 (Principles & Judgment Logic)'}
+              </h3>
+              <div className="principle-card">
+                <div className="pc-headline">
+                  <Sparkles size={14} className="pc-sparkle" />
+                  <span>{item.principle.headline}</span>
+                </div>
+
+                <div className="pc-grid">
+                  <div className="pc-box pc-method">
+                    <div className="pc-box-title">
+                      <span className="pc-step-badge">01</span>
+                      <strong>{lang === 'en' ? 'How Data is Captured & Measured' : '一、數據如何採集與測量'}</strong>
+                    </div>
+                    <p>{item.principle.method}</p>
+                  </div>
+
+                  <div className="pc-box pc-mechanism">
+                    <div className="pc-box-title">
+                      <span className="pc-step-badge">02</span>
+                      <strong>{lang === 'en' ? 'Spaceflight Physiological Mechanism' : '二、深空微重力生理與病理機轉'}</strong>
+                    </div>
+                    <p>{item.principle.mechanism}</p>
+                  </div>
+
+                  <div className="pc-box pc-logic pc-box-wide">
+                    <div className="pc-box-title">
+                      <span className="pc-step-badge">03</span>
+                      <strong>{lang === 'en' ? 'Judgment Logic & Threshold Rationale' : '三、系統判定依據與狀態閾值邏輯 (How it Judges)'}</strong>
+                    </div>
+                    <p>{item.principle.judgmentLogic}</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Section 3: Standards & Thresholds */}
           <section className="criteria-section">
             <h3 className="section-title">
               <CheckCircle2 size={15} /> {lang === 'en' ? 'Clinical Standards & Diagnostic Thresholds' : '臨床評估標準與狀態閾值 (Clinical Standards)'}

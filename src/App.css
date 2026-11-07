@@ -7438,6 +7438,98 @@
   font-size: 11.5px;
 }
 
+/* ==========================================================================
+   Criteria Modal: Measurement Principle & Clinical Judgment Logic Section
+   ========================================================================== */
+.criteria-principle-section {
+  margin-top: 20px;
+}
+.principle-card {
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(16, 24, 38, 0.75) 0%, rgba(10, 15, 25, 0.9) 100%);
+  border: 1.5px solid rgba(0, 224, 200, 0.28);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.pc-headline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: rgba(0, 224, 200, 0.08);
+  border-bottom: 1px solid rgba(0, 224, 200, 0.2);
+  color: #38efd8;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.pc-sparkle {
+  color: #00ffd0;
+  flex-shrink: 0;
+}
+.pc-grid {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 768px) {
+  .pc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.pc-box {
+  padding: 14px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pc-box.pc-box-wide {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(0, 224, 200, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(0, 224, 200, 0.22);
+}
+.pc-box-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pc-step-badge {
+  font-family: var(--font-hud);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(0, 255, 163, 0.14);
+  border: 1px solid rgba(0, 255, 163, 0.35);
+  color: #00ffa3;
+}
+.pc-box-wide .pc-step-badge {
+  background: rgba(255, 208, 67, 0.16);
+  border-color: rgba(255, 208, 67, 0.4);
+  color: #ffd859;
+}
+.pc-box-title strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+.pc-box p {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.65;
+  margin: 0;
+}
+.pc-box-wide p {
+  color: #e2e8f0;
+}
+
+
 
 
 
